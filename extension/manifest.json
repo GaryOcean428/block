@@ -3,6 +3,7 @@
   "name": "Poloniex Trading Extension",
   "version": "1.0.0",
   "description": "Trading tool with TradingView integration and Poloniex automation",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhm6y7K5eN4YZL1Wz2SJdpFwkaIgMP9DU8dYQd/HTF9JBVXzPtbCmHKmJ5JXueAduoHjFN7AYs8VYzGk/+EsLKh1mPVnJeo1X8QCGn7R4/a6QJwOnHYyoU6S0YeL1YqqEX6ZQliIvQf5iq3HoFYdrvvdu3V/vOxzXzRfCLVckPRJLQCN2ox+m8l3wHJxnYBsPNUaOQpW7GRyQzJlbGNKP13rDSLBvlRx4lOJ8oGGiOhpTHQOXKvbD9dXrF1Vb+8oJKj79hGWF2HbX4LXbT8zJ4XJWw0ELo/4YUtcFdeY5SQa5B0n+0yIm5aXlUEDfmQJH4wILVU0W3lvGbR8yzccQPQIDAQAB",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -37,5 +38,9 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "externally_connectable": {
+    "ids": ["mnmijjdadadomgmpopijhghadplbbjoc"],
+    "matches": ["http://localhost:*/*", "https://*.poloniex.com/*"]
   }
 }

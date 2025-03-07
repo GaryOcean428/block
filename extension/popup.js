@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', function () {
+/**
+ * Poloniex Trading Platform Chrome Extension
+ */
+document.addEventListener('DOMContentLoaded', function() {
   // DOM elements - check for existence before using
   const pairSelect = document.getElementById('pair-select');
   const buyBtn = document.getElementById('buy-btn');
@@ -26,9 +29,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Mock username
   const username = 'user_' + Math.floor(Math.random() * 1000);
+  
+  // Send chat message function - defined before being used
+  function sendMessage() {
+    if (!messageInput || !chatMessages) return;
+    
+    const message = messageInput.value.trim();
+    if (message) {
+      addMessageToChat(username, message);
+      messageInput.value = '';
+    }
+  }
 
-  // Function to initialize all event listeners
-  function initializeEventListeners() {
+  // Function to add messages to chat
+  function addMessageToChat(username, text) {
+    if (!chatMessages) return;
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message';
+    messageElement.innerHTML = `
+      <span class="username">${username}:</span>
+      <span class="text">${text}</span>
+    `;
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Function to show notifications
+  function showNotification(message) {
+    // Create a temporary notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    notification.style.position = 'absolute';
+    notification.style.bottom = '10px';
+    notification.style.right = '10px';
+    notification.style.backgroundColor = '#4caf50';
+    notification.style.color = 'white';
+    notification.style.padding = '8px 12px';
+    notification.style.borderRadius = '4px';
+    notification.style.zIndex = '1000';
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
+  }
+
+  // Function to setup all event listeners
+  function setupEventListeners() {
     // Only add event listeners if elements exist
     if (openAppBtn) {
       openAppBtn.addEventListener('click', function () {
@@ -106,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
           // Add back button handler
           document.getElementById('back-btn').addEventListener('click', () => {
             popup.innerHTML = originalContent;
-            initializeEventListeners(); // Re-initialize main popup listeners
+            setupEventListeners(); // Re-initialize main popup listeners
           });
 
           // Load current settings
@@ -140,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
               showNotification('Settings saved successfully');
               // Return to main view after saving
               popup.innerHTML = originalContent;
-              initializeEventListeners();
+              setupEventListeners();
             });
           });
         }
@@ -172,54 +224,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function sendMessage() {
-    if (!messageInput || !chatMessages) return;
-
-    const message = messageInput.value.trim();
-    if (message) {
-      addMessageToChat(username, message);
-      messageInput.value = '';
-    }
-  }
-
-  function addMessageToChat(username, text) {
-    if (!chatMessages) return;
-
-    const messageElement = document.createElement('div');
-    messageElement.className = 'message';
-    messageElement.innerHTML = `
-      <span class="username">${username}:</span>
-      <span class="text">${text}</span>
-    `;
-    chatMessages.appendChild(messageElement);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-
-  function showNotification(message) {
-    // Create a temporary notification element
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    notification.style.position = 'absolute';
-    notification.style.bottom = '10px';
-    notification.style.right = '10px';
-    notification.style.backgroundColor = '#4caf50';
-    notification.style.color = 'white';
-    notification.style.padding = '8px 12px';
-    notification.style.borderRadius = '4px';
-    notification.style.zIndex = '1000';
-    document.body.appendChild(notification);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 3000);
-  }
-
   // Initialize all event listeners
-  initializeEventListeners();
+  setupEventListeners();
 
   // Mock data for testing - only add if chat exists
   if (chatMessages) {
