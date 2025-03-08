@@ -16,7 +16,7 @@ const StrategyAutomation: React.FC<StrategyAutomationProps> = ({ strategy }) => 
     riskPerTrade: 2,
     stopLossPercent: 2,
     takeProfitPercent: 4,
-    trailingStopPercent: 1
+    trailingStopPercent: 1,
   });
 
   const handleToggleAutomation = () => {
@@ -71,76 +71,70 @@ const StrategyAutomation: React.FC<StrategyAutomationProps> = ({ strategy }) => 
             <div className="flex">
               <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
               <p className="text-sm text-yellow-700">
-                Automated trading will execute real trades with real funds. Make sure
-                to configure your risk parameters carefully.
+                Automated trading will execute real trades with real funds. Make sure to configure
+                your risk parameters carefully.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Max Positions
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Max Positions</label>
               <input
                 type="number"
                 value={config.maxPositions}
-                onChange={(e) => setConfig({ ...config, maxPositions: parseInt(e.target.value) })}
+                onChange={e => setConfig({ ...config, maxPositions: parseInt(e.target.value) })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Max Leverage
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Max Leverage</label>
               <input
                 type="number"
                 value={config.maxLeverage}
-                onChange={(e) => setConfig({ ...config, maxLeverage: parseInt(e.target.value) })}
+                onChange={e => setConfig({ ...config, maxLeverage: parseInt(e.target.value) })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Risk Per Trade (%)
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Risk Per Trade (%)</label>
               <input
                 type="number"
                 value={config.riskPerTrade}
-                onChange={(e) => setConfig({ ...config, riskPerTrade: parseFloat(e.target.value) })}
+                onChange={e => setConfig({ ...config, riskPerTrade: parseFloat(e.target.value) })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Stop Loss (%)
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Stop Loss (%)</label>
               <input
                 type="number"
                 value={config.stopLossPercent}
-                onChange={(e) => setConfig({ ...config, stopLossPercent: parseFloat(e.target.value) })}
+                onChange={e =>
+                  setConfig({ ...config, stopLossPercent: parseFloat(e.target.value) })
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Take Profit (%)
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Take Profit (%)</label>
               <input
                 type="number"
                 value={config.takeProfitPercent}
-                onChange={(e) => setConfig({ ...config, takeProfitPercent: parseFloat(e.target.value) })}
+                onChange={e =>
+                  setConfig({ ...config, takeProfitPercent: parseFloat(e.target.value) })
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Trailing Stop (%)
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Trailing Stop (%)</label>
               <input
                 type="number"
                 value={config.trailingStopPercent}
-                onChange={(e) => setConfig({ ...config, trailingStopPercent: parseFloat(e.target.value) })}
+                onChange={e =>
+                  setConfig({ ...config, trailingStopPercent: parseFloat(e.target.value) })
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>

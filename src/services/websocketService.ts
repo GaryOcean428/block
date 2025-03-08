@@ -31,28 +31,28 @@ class WebSocketService {
   private offlineData: Map<string, any> = new Map();
   private connectionAttempted: boolean = false;
   private useMockData: boolean = true; // Default to mock data
-  
+
   // In a real application, this would be your WebSocket server URL
   private readonly SOCKET_URL = 'http://localhost:3000';
-  
+
   private constructor() {}
-  
+
   public static getInstance(): WebSocketService {
     if (!WebSocketService.instance) {
       WebSocketService.instance = new WebSocketService();
     }
     return WebSocketService.instance;
   }
-  
+
   /**
    * Connect to the WebSocket server
    */
   public connect(token?: string): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       try {
         // Reset reconnect attempts on new connection
         this.reconnectAttempts = 0;
-        
+
         // If we already attempted to connect and failed, don't retry
         if (this.connectionAttempted) {
           console.log('Using mock data (previous connection attempt failed)');
@@ -60,122 +60,132 @@ class WebSocketService {
           resolve();
           return;
         }
-        
+
         this.connectionAttempted = true;
         console.log('Attempting WebSocket connection with 3s timeout...');
-        
+
         // Set a connection timeout
         const timeout = setTimeout(() => {
           console.log('WebSocket connection timed out, using mock data');
           this.useMockData = true;
           resolve();
         }, 3000);
-        
+
         // In WebContainer environment, always use mock data
         // WebSocket connections outside the container domain aren't possible
-        if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('webcontainer-api.io')) {
+        if (
+          typeof window !== 'undefined' &&
+          window.location &&
+          window.location.hostname.includes('webcontainer-api.io')
+        ) {
           this.useMockData = true;
           clearTimeout(timeout);
           console.log('Running in WebContainer environment, defaulting to mock data');
           resolve();
           return;
         }
-        
+
         // Check if server is available before attempting socket connection
-        fetch(this.SOCKET_URL + '/api/health', { 
+        fetch(this.SOCKET_URL + '/api/health', {
           method: 'GET',
-          signal: AbortSignal.timeout(2000) // 2s timeout for the health check
+          signal: AbortSignal.timeout(2000), // 2s timeout for the health check
         })
-        .then(response => {
-          if (!response.ok) throw new Error('Server health check failed');
-          return response.json();
-        })
-        .then(() => {
-          // Server is available, attempt WebSocket connection
-          clearTimeout(timeout);
-          
-          this.socket = io(this.SOCKET_URL, {
-            auth: token ? { token } : undefined,
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 2,
-            reconnectionDelay: 1000,
-            timeout: 2000
-          });
-          
-          this.socket.on(EVENTS.CONNECT, () => {
-            console.log('WebSocket connected successfully');
-            this.connected = true;
-            this.useMockData = false;
+          .then(response => {
+            if (!response.ok) throw new Error('Server health check failed');
+            return response.json();
+          })
+          .then(() => {
+            // Server is available, attempt WebSocket connection
+            clearTimeout(timeout);
+
+            this.socket = io(this.SOCKET_URL, {
+              auth: token ? { token } : undefined,
+              transports: ['websocket'],
+              reconnection: true,
+              reconnectionAttempts: 2,
+              reconnectionDelay: 1000,
+              timeout: 2000,
+            });
+
+            this.socket.on(EVENTS.CONNECT, () => {
+              console.log('WebSocket connected successfully');
+              this.connected = true;
+              this.useMockData = false;
+              resolve();
+            });
+
+            this.socket.on(EVENTS.DISCONNECT, () => {
+              console.log('WebSocket disconnected, falling back to mock data');
+              this.handleDisconnect();
+              this.connected = false;
+              this.useMockData = true;
+            });
+
+            this.socket.on(EVENTS.ERROR, error => {
+              console.error(
+                'WebSocket error:',
+                typeof error === 'object' ? JSON.stringify(error) : error
+              );
+              this.useMockData = true;
+            });
+
+            // Set up message handlers
+            this.setupMessageHandlers();
+          })
+          .catch(error => {
+            // Server is not available, use mock data
+            clearTimeout(timeout);
+            console.log('Server not available, using mock data:', error.message);
+            this.useMockData = true;
             resolve();
           });
-          
-          this.socket.on(EVENTS.DISCONNECT, () => {
-            console.log('WebSocket disconnected, falling back to mock data');
-            this.handleDisconnect();
-            this.connected = false;
-            this.useMockData = true;
-          });
-          
-          this.socket.on(EVENTS.ERROR, (error) => {
-            console.error('WebSocket error:', typeof error === 'object' ? JSON.stringify(error) : error);
-            this.useMockData = true;
-          });
-          
-          // Set up message handlers
-          this.setupMessageHandlers();
-        })
-        .catch(error => {
-          // Server is not available, use mock data
-          clearTimeout(timeout);
-          console.log('Server not available, using mock data:', error.message);
-          this.useMockData = true;
-          resolve();
-        });
       } catch (error) {
-        console.error('WebSocket connection error:', error instanceof Error ? error.message : String(error));
+        console.error(
+          'WebSocket connection error:',
+          error instanceof Error ? error.message : String(error)
+        );
         this.useMockData = true;
         resolve();
       }
     });
   }
-  
+
   /**
    * Check if WebSocket is connected
    */
   public isConnected(): boolean {
     return this.connected && this.socket !== null;
   }
-  
+
   /**
    * Check if we're using mock data
    */
   public isMockMode(): boolean {
     return this.useMockData;
   }
-  
+
   /**
    * Set up message handlers for different types of events
    */
   private setupMessageHandlers(): void {
     if (!this.socket) return;
-    
+
     // Handle market data updates
     this.socket.on(EVENTS.MARKET_DATA, (data: MarketData) => {
       this.notifyListeners(EVENTS.MARKET_DATA, data);
     });
-    
+
     // Handle trade execution notifications
     this.socket.on(EVENTS.TRADE_EXECUTED, (data: Trade) => {
       this.notifyListeners(EVENTS.TRADE_EXECUTED, data);
     });
-    
+
     // Handle chat messages
     this.socket.on(EVENTS.CHAT_MESSAGE, (data: ChatMessage) => {
       this.notifyListeners(EVENTS.CHAT_MESSAGE, data);
     });
   }
-  
+
   /**
    * Handle WebSocket disconnection with reconnect logic
    */
@@ -183,9 +193,11 @@ class WebSocketService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-      
-      console.log(`Attempting reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-      
+
+      console.log(
+        `Attempting reconnect ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`
+      );
+
       setTimeout(() => {
         this.connect()
           .then(() => {
@@ -202,19 +214,22 @@ class WebSocketService {
       console.log('Max reconnection attempts reached, staying in mock mode');
     }
   }
-  
+
   /**
    * Save data for offline access
    */
   private saveOfflineData(key: string, data: any): void {
     try {
       this.offlineData.set(key, data);
-      localStorage.setItem('websocket_offline_data', JSON.stringify(Array.from(this.offlineData.entries())));
+      localStorage.setItem(
+        'websocket_offline_data',
+        JSON.stringify(Array.from(this.offlineData.entries()))
+      );
     } catch (error) {
       console.error('Error saving offline data:', error);
     }
   }
-  
+
   /**
    * Load offline data
    */
@@ -228,7 +243,7 @@ class WebSocketService {
       console.error('Error loading offline data:', error);
     }
   }
-  
+
   /**
    * Subscribe to market data for a specific pair
    */
@@ -242,10 +257,10 @@ class WebSocketService {
       }
       return;
     }
-    
+
     this.socket.emit(EVENTS.SUBSCRIBE_MARKET, { pair });
   }
-  
+
   /**
    * Unsubscribe from market data for a specific pair
    */
@@ -253,10 +268,10 @@ class WebSocketService {
     if (!this.connected || !this.socket) {
       return;
     }
-    
+
     this.socket.emit(EVENTS.UNSUBSCRIBE_MARKET, { pair });
   }
-  
+
   /**
    * Send a chat message
    */
@@ -265,14 +280,14 @@ class WebSocketService {
       console.log('WebSocket not connected, chat message not sent');
       return;
     }
-    
+
     this.socket.emit(EVENTS.CHAT_MESSAGE, {
       message,
       username,
       timestamp: Date.now(),
     });
   }
-  
+
   /**
    * Register an event listener
    */
@@ -280,37 +295,40 @@ class WebSocketService {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    
+
     this.eventListeners.get(event)?.add(callback);
   }
-  
+
   /**
    * Remove an event listener
    */
   public off(event: string, callback: Function): void {
     if (!this.eventListeners.has(event)) return;
-    
+
     this.eventListeners.get(event)?.delete(callback);
   }
-  
+
   /**
    * Notify all listeners for a specific event
    */
   private notifyListeners(event: string, data: any): void {
     if (!this.eventListeners.has(event)) return;
-    
+
     // Save data for offline access
     this.saveOfflineData(event, data);
-    
+
     this.eventListeners.get(event)?.forEach(callback => {
       try {
         callback(data);
       } catch (error) {
-        console.error(`Error in ${event} event listener:`, error instanceof Error ? error.message : String(error));
+        console.error(
+          `Error in ${event} event listener:`,
+          error instanceof Error ? error.message : String(error)
+        );
       }
     });
   }
-  
+
   /**
    * Disconnect from the WebSocket server
    */

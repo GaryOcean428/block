@@ -16,7 +16,7 @@ export const mockTransactions: Transaction[] = [
     description: 'USDT Deposit',
     amount: 5000,
     status: 'COMPLETED',
-    timestamp: Date.now() - 24 * 60 * 60 * 1000
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
   },
   {
     id: 'tx_2',
@@ -24,7 +24,7 @@ export const mockTransactions: Transaction[] = [
     description: 'BTC-USDT Buy',
     amount: 2500,
     status: 'COMPLETED',
-    timestamp: Date.now() - 12 * 60 * 60 * 1000
+    timestamp: Date.now() - 12 * 60 * 60 * 1000,
   },
   {
     id: 'tx_3',
@@ -32,7 +32,7 @@ export const mockTransactions: Transaction[] = [
     description: 'USDT Withdrawal',
     amount: 1000,
     status: 'PENDING',
-    timestamp: Date.now() - 6 * 60 * 60 * 1000
+    timestamp: Date.now() - 6 * 60 * 60 * 1000,
   },
   {
     id: 'tx_4',
@@ -40,7 +40,7 @@ export const mockTransactions: Transaction[] = [
     description: 'ETH-USDT Sell',
     amount: 1500,
     status: 'COMPLETED',
-    timestamp: Date.now() - 3 * 60 * 60 * 1000
+    timestamp: Date.now() - 3 * 60 * 60 * 1000,
   },
   {
     id: 'tx_5',
@@ -48,8 +48,8 @@ export const mockTransactions: Transaction[] = [
     description: 'BTC Deposit',
     amount: 3000,
     status: 'COMPLETED',
-    timestamp: Date.now() - 1 * 60 * 60 * 1000
-  }
+    timestamp: Date.now() - 1 * 60 * 60 * 1000,
+  },
 ];
 
 // Generate mock market data for the past 100 periods
@@ -61,7 +61,7 @@ export const mockMarketData: MarketData[] = Array.from({ length: 100 }, (_, i) =
   const high = open + Math.random() * volatility;
   const low = open - Math.random() * volatility;
   const close = low + Math.random() * (high - low);
-  
+
   return {
     pair: 'BTC-USDT',
     timestamp,
@@ -81,14 +81,14 @@ export const mockStrategies: Strategy[] = [
     parameters: {
       shortPeriod: 10,
       longPeriod: 50,
-      pair: 'BTC-USDT'
+      pair: 'BTC-USDT',
     },
     created: new Date().toISOString(),
     performance: {
       totalPnL: 12.5,
       winRate: 0.65,
-      tradesCount: 24
-    }
+      tradesCount: 24,
+    },
   },
   {
     id: '2',
@@ -98,14 +98,14 @@ export const mockStrategies: Strategy[] = [
       period: 14,
       overbought: 70,
       oversold: 30,
-      pair: 'ETH-USDT'
+      pair: 'ETH-USDT',
     },
     created: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     performance: {
       totalPnL: 8.2,
       winRate: 0.58,
-      tradesCount: 17
-    }
+      tradesCount: 17,
+    },
   },
   {
     id: '3',
@@ -114,15 +114,15 @@ export const mockStrategies: Strategy[] = [
     parameters: {
       lookbackPeriod: 24,
       breakoutThreshold: 2.5,
-      pair: 'BTC-USDT'
+      pair: 'BTC-USDT',
     },
     created: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
     performance: {
       totalPnL: 15.7,
       winRate: 0.45,
-      tradesCount: 11
-    }
-  }
+      tradesCount: 11,
+    },
+  },
 ];
 
 // Generate mock trades with guaranteed unique IDs
@@ -136,7 +136,7 @@ export const mockTrades: Trade[] = [
     amount: 0.05,
     total: 2561.73,
     strategyId: '1',
-    status: 'COMPLETED'
+    status: 'COMPLETED',
   },
   {
     id: 'mock-trade-2',
@@ -147,7 +147,7 @@ export const mockTrades: Trade[] = [
     amount: 0.05,
     total: 2596.71,
     strategyId: '1',
-    status: 'COMPLETED'
+    status: 'COMPLETED',
   },
   {
     id: 'mock-trade-3',
@@ -158,7 +158,7 @@ export const mockTrades: Trade[] = [
     amount: 0.25,
     total: 811.45,
     strategyId: '2',
-    status: 'COMPLETED'
+    status: 'COMPLETED',
   },
   {
     id: 'mock-trade-4',
@@ -169,6 +169,6 @@ export const mockTrades: Trade[] = [
     amount: 0.03,
     total: 1563.01,
     strategyId: '3',
-    status: 'PENDING'
-  }
+    status: 'PENDING',
+  },
 ];

@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+} from 'react';
 import { Strategy, StrategyType, MarketData, Trade } from '../types';
 import { mockMarketData, mockTrades } from '../data/mockData';
 import { usePoloniexData } from '../hooks/usePoloniexData';
@@ -16,7 +23,13 @@ interface TradingContextType {
   addStrategy: (strategy: Strategy) => void;
   removeStrategy: (id: string) => void;
   toggleStrategyActive: (id: string) => void;
-  placeOrder: (pair: string, side: 'buy' | 'sell', type: 'limit' | 'market', quantity: number, price?: number) => Promise<any>;
+  placeOrder: (
+    pair: string,
+    side: 'buy' | 'sell',
+    type: 'limit' | 'market',
+    quantity: number,
+    price?: number
+  ) => Promise<any>;
   errors: string[];
   addError: (error: string) => void;
   clearErrors: () => void;
@@ -29,37 +42,37 @@ interface TradingProviderProps {
   initialPair?: string;
 }
 
-export const TradingProvider: React.FC<TradingProviderProps> = ({ 
-  children, 
-  initialPair = 'BTC-USDT' 
+export const TradingProvider: React.FC<TradingProviderProps> = ({
+  children,
+  initialPair = 'BTC-USDT',
 }) => {
   // Get data from Poloniex API or mock data
-  const { 
-    marketData: realMarketData, 
+  const {
+    marketData: realMarketData,
     trades: realTrades,
     accountBalance,
     isLoading,
     error,
     isMockMode,
-    refreshApiConnection
+    refreshApiConnection,
   } = usePoloniexData(initialPair);
-  
+
   const [marketData, setMarketData] = useState<MarketData[]>(mockMarketData);
   const [trades, setTrades] = useState<Trade[]>(mockTrades);
-  
+
   // Update state when real data is available
   useEffect(() => {
     if (realMarketData.length > 0) {
       setMarketData(realMarketData);
     }
   }, [realMarketData]);
-  
+
   useEffect(() => {
     if (realTrades.length > 0) {
       setTrades(realTrades);
     }
   }, [realTrades]);
-  
+
   // Strategy management
   const [strategies, setStrategies] = useState<Strategy[]>([
     {
@@ -69,17 +82,17 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({
       parameters: {
         shortPeriod: 10,
         longPeriod: 50,
-        pair: 'BTC-USDT'
+        pair: 'BTC-USDT',
       },
       created: new Date().toISOString(),
       performance: {
         totalPnL: 12.5,
         winRate: 0.65,
-        tradesCount: 24
-      }
-    }
+        tradesCount: 24,
+      },
+    },
   ]);
-  
+
   const [activeStrategies, setActiveStrategies] = useState<string[]>(['1']);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -100,10 +113,8 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({
   };
 
   const toggleStrategyActive = (id: string) => {
-    setActiveStrategies(prev => 
-      prev.includes(id) 
-        ? prev.filter(strategyId => strategyId !== id) 
-        : [...prev, id]
+    setActiveStrategies(prev =>
+      prev.includes(id) ? prev.filter(strategyId => strategyId !== id) : [...prev, id]
     );
   };
 
@@ -120,29 +131,29 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({
   const clearErrors = () => {
     setErrors([]);
   };
-  
+
   // Place an order using the Poloniex API
   const placeOrder = async (
-    pair: string, 
-    side: 'buy' | 'sell', 
-    type: 'limit' | 'market', 
-    quantity: number, 
+    pair: string,
+    side: 'buy' | 'sell',
+    type: 'limit' | 'market',
+    quantity: number,
     price?: number
   ) => {
     try {
       if (isMockMode) {
         console.log('Using mock order placement', { pair, side, type, quantity, price });
-        return { 
-          success: true, 
+        return {
+          success: true,
           orderId: 'mock-order-' + Date.now(),
           pair,
           side,
           type,
           quantity,
-          price: price || 'market'
+          price: price || 'market',
         };
       }
-      
+
       const result = await poloniexApi.placeOrder(pair, side, type, quantity, price);
       return result;
     } catch (err) {
@@ -153,23 +164,25 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({
   };
 
   return (
-    <TradingContext.Provider value={{
-      marketData,
-      trades,
-      strategies,
-      activeStrategies,
-      accountBalance,
-      isLoading,
-      isMockMode,
-      refreshApiConnection,
-      addStrategy,
-      removeStrategy,
-      toggleStrategyActive,
-      placeOrder,
-      errors,
-      addError,
-      clearErrors
-    }}>
+    <TradingContext.Provider
+      value={{
+        marketData,
+        trades,
+        strategies,
+        activeStrategies,
+        accountBalance,
+        isLoading,
+        isMockMode,
+        refreshApiConnection,
+        addStrategy,
+        removeStrategy,
+        toggleStrategyActive,
+        placeOrder,
+        errors,
+        addError,
+        clearErrors,
+      }}
+    >
       {children}
     </TradingContext.Provider>
   );

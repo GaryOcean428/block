@@ -1,21 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTradingContext } from '../context/TradingContext';
-import { 
-  LayoutDashboard, 
-  LineChart, 
-  Settings, 
-  MessageSquare, 
+import {
+  LayoutDashboard,
+  LineChart,
+  Settings,
+  MessageSquare,
   Zap,
   BarChart4,
   Chrome,
-  User
+  User,
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { accountBalance, isLoading } = useTradingContext();
-  
+
   const navItems = [
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { path: '/strategies', label: 'Trading Strategies', icon: <Zap size={20} /> },
@@ -24,9 +24,9 @@ const Sidebar: React.FC = () => {
     { path: '/performance', label: 'Performance', icon: <LineChart size={20} /> },
     { path: '/chat', label: 'Community Chat', icon: <MessageSquare size={20} /> },
     { path: '/extension', label: 'Chrome Extension', icon: <Chrome size={20} /> },
-    { path: '/settings', label: 'Settings', icon: <Settings size={20} /> }
+    { path: '/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
-  
+
   return (
     <aside className="w-64 bg-gray-800 text-white hidden md:block">
       <div className="p-4">
@@ -34,16 +34,16 @@ const Sidebar: React.FC = () => {
           <Zap className="h-8 w-8 text-blue-400 mr-2" />
           <h2 className="text-xl font-bold">TradingBot</h2>
         </div>
-        
+
         <nav>
           <ul>
-            {navItems.map((item) => (
+            {navItems.map(item => (
               <li key={item.path} className="mb-1">
-                <Link 
-                  to={item.path} 
+                <Link
+                  to={item.path}
                   className={`flex items-center p-3 rounded-md transition-colors duration-200 ${
-                    location.pathname === item.path 
-                      ? 'bg-blue-700 text-white' 
+                    location.pathname === item.path
+                      ? 'bg-blue-700 text-white'
                       : 'text-gray-300 hover:bg-gray-700'
                   }`}
                 >
@@ -55,7 +55,7 @@ const Sidebar: React.FC = () => {
           </ul>
         </nav>
       </div>
-      
+
       <div className="p-4 border-t border-gray-700 mt-auto">
         <div className="bg-gray-900 p-3 rounded-md">
           <div className="text-sm text-gray-400 mb-2">Account Balance</div>
@@ -66,7 +66,9 @@ const Sidebar: React.FC = () => {
               <div className="text-lg font-semibold">
                 ${parseFloat(accountBalance?.totalAmount || '0').toFixed(2)} USDT
               </div>
-              <div className={`text-xs mt-1 ${parseFloat(accountBalance?.todayPnL || '0') >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <div
+                className={`text-xs mt-1 ${parseFloat(accountBalance?.todayPnL || '0') >= 0 ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {parseFloat(accountBalance?.todayPnL || '0') >= 0 ? '+' : ''}
                 {parseFloat(accountBalance?.todayPnLPercentage || '0').toFixed(2)}% today
               </div>

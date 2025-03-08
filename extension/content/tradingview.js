@@ -11,11 +11,11 @@ let interval = null;
 // Function to start data extraction
 function startDataExtraction() {
   console.log('Starting TradingView data extraction');
-  
+
   if (interval) {
     clearInterval(interval);
   }
-  
+
   // Extract data every 5 seconds
   interval = setInterval(extractChartData, 5000);
   isExtractingData = true;
@@ -24,12 +24,12 @@ function startDataExtraction() {
 // Function to stop data extraction
 function stopDataExtraction() {
   console.log('Stopping TradingView data extraction');
-  
+
   if (interval) {
     clearInterval(interval);
     interval = null;
   }
-  
+
   isExtractingData = false;
 }
 
@@ -41,37 +41,39 @@ function extractChartData() {
     if (symbolElement) {
       chartSymbol = symbolElement.textContent.trim();
     }
-    
+
     // Look for price info
     const priceElement = document.querySelector('.chart-container .price-PMjTOxfm');
     if (priceElement) {
       lastPrice = parseFloat(priceElement.textContent.replace(/[^\d.-]/g, ''));
     }
-    
+
     // Look for additional info like volume, etc.
     const additionalInfo = {};
-    
+
     // Find time frame
     const timeframeElement = document.querySelector('.chart-container .value-DWZXOdoK');
     if (timeframeElement) {
       additionalInfo.timeframe = timeframeElement.textContent.trim();
     }
-    
+
     // Try to find chart indicators
-    const indicatorsElements = document.querySelectorAll('.chart-container .study-legend-GzQpOzPY .study-item-GzQpOzPY .title-GzQpOzPY');
+    const indicatorsElements = document.querySelectorAll(
+      '.chart-container .study-legend-GzQpOzPY .study-item-GzQpOzPY .title-GzQpOzPY'
+    );
     if (indicatorsElements.length > 0) {
       additionalInfo.indicators = Array.from(indicatorsElements).map(el => el.textContent.trim());
     }
-    
+
     // Try to find volume
     const volumeElement = document.querySelector('.chart-container .valueValue-l31H9iuA');
     if (volumeElement) {
       additionalInfo.volume = volumeElement.textContent.trim();
     }
-    
+
     // Format the chart data
     let poloniexPair = '';
-    
+
     // Convert TradingView symbol format to Poloniex format
     if (chartSymbol.includes('USDT')) {
       // Example: BTCUSDT -> BTC-USDT
@@ -82,27 +84,26 @@ function extractChartData() {
     } else {
       poloniexPair = chartSymbol;
     }
-    
+
     chartData = {
       source: 'tradingview',
       timestamp: Date.now(),
       tradingViewSymbol: chartSymbol,
       pair: poloniexPair,
       price: lastPrice,
-      ...additionalInfo
+      ...additionalInfo,
     };
-    
+
     // Send data to background script
     chrome.runtime.sendMessage({
       type: 'UPDATE_TRADINGVIEW_DATA',
       data: {
-        [poloniexPair]: chartData
-      }
+        [poloniexPair]: chartData,
+      },
     });
-    
+
     // Also add a visible indicator that data is being extracted
     showExtractorStatus();
-    
   } catch (error) {
     console.error('Error extracting chart data:', error);
   }
@@ -111,7 +112,7 @@ function extractChartData() {
 // Function to show the status of the data extractor
 function showExtractorStatus() {
   let statusBar = document.getElementById('trading-extension-status');
-  
+
   if (!statusBar) {
     statusBar = document.createElement('div');
     statusBar.id = 'trading-extension-status';
@@ -126,7 +127,7 @@ function showExtractorStatus() {
     statusBar.style.zIndex = '9999';
     document.body.appendChild(statusBar);
   }
-  
+
   statusBar.innerHTML = `
     <div>Trading Extension Active</div>
     <div>Symbol: ${chartSymbol}</div>
@@ -159,7 +160,7 @@ function injectTradeControls() {
       const chartToolbar = document.querySelector('.chart-toolbar');
       if (chartToolbar) {
         clearInterval(checkForChartContainer);
-        
+
         // Create the trade button
         const tradeButton = document.createElement('button');
         tradeButton.innerText = 'Quick Trade';
@@ -167,10 +168,10 @@ function injectTradeControls() {
         tradeButton.style.backgroundColor = '#3b82f6';
         tradeButton.style.color = 'white';
         tradeButton.style.marginLeft = '10px';
-        
+
         // Add the button to the toolbar
         chartToolbar.appendChild(tradeButton);
-        
+
         // Add click handler
         tradeButton.addEventListener('click', () => {
           openTradePanel();
@@ -190,7 +191,7 @@ function openTradePanel() {
     existingPanel.remove();
     return;
   }
-  
+
   // Create panel
   const panel = document.createElement('div');
   panel.id = 'trade-panel';
@@ -203,7 +204,7 @@ function openTradePanel() {
   panel.style.borderRadius = '5px';
   panel.style.zIndex = '10000';
   panel.style.padding = '15px';
-  
+
   // Add content to panel
   panel.innerHTML = `
     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
@@ -238,15 +239,15 @@ function openTradePanel() {
     </div>
     <div id="trade-status" style="margin-bottom: 10px; color: #666; font-size: 14px;"></div>
   `;
-  
+
   document.body.appendChild(panel);
-  
+
   // Add event listeners
   document.getElementById('close-panel').addEventListener('click', () => {
     panel.remove();
   });
-  
-  document.getElementById('trade-type').addEventListener('change', (e) => {
+
+  document.getElementById('trade-type').addEventListener('change', e => {
     const limitPriceContainer = document.getElementById('limit-price-container');
     if (e.target.value === 'market') {
       limitPriceContainer.style.display = 'none';
@@ -254,11 +255,11 @@ function openTradePanel() {
       limitPriceContainer.style.display = 'block';
     }
   });
-  
+
   document.getElementById('buy-button').addEventListener('click', () => {
     executeTrade('buy');
   });
-  
+
   document.getElementById('sell-button').addEventListener('click', () => {
     executeTrade('sell');
   });
@@ -268,21 +269,22 @@ function openTradePanel() {
 function executeTrade(side) {
   const tradeType = document.getElementById('trade-type').value;
   const amount = parseFloat(document.getElementById('trade-amount').value);
-  const price = tradeType === 'limit' ? parseFloat(document.getElementById('trade-price').value) : null;
+  const price =
+    tradeType === 'limit' ? parseFloat(document.getElementById('trade-price').value) : null;
   const statusElement = document.getElementById('trade-status');
-  
+
   if (!amount || isNaN(amount) || amount <= 0) {
     statusElement.textContent = 'Please enter a valid amount';
     statusElement.style.color = '#ef4444';
     return;
   }
-  
+
   if (tradeType === 'limit' && (!price || isNaN(price) || price <= 0)) {
     statusElement.textContent = 'Please enter a valid price';
     statusElement.style.color = '#ef4444';
     return;
   }
-  
+
   // Convert TradingView symbol to Poloniex format
   let poloniexPair = '';
   if (chartSymbol.includes('USDT')) {
@@ -292,30 +294,33 @@ function executeTrade(side) {
   } else {
     poloniexPair = chartSymbol;
   }
-  
+
   // Update status
   statusElement.textContent = 'Executing trade...';
   statusElement.style.color = '#3b82f6';
-  
+
   // Send trade to background script
-  chrome.runtime.sendMessage({
-    type: 'PLACE_ORDER',
-    data: {
-      pair: poloniexPair,
-      side,
-      type: tradeType,
-      amount,
-      price
+  chrome.runtime.sendMessage(
+    {
+      type: 'PLACE_ORDER',
+      data: {
+        pair: poloniexPair,
+        side,
+        type: tradeType,
+        amount,
+        price,
+      },
+    },
+    response => {
+      if (response && response.success) {
+        statusElement.textContent = `Trade successful! Order ID: ${response.orderId}`;
+        statusElement.style.color = '#10b981';
+      } else {
+        statusElement.textContent = `Trade failed: ${response.error || 'Unknown error'}`;
+        statusElement.style.color = '#ef4444';
+      }
     }
-  }, (response) => {
-    if (response && response.success) {
-      statusElement.textContent = `Trade successful! Order ID: ${response.orderId}`;
-      statusElement.style.color = '#10b981';
-    } else {
-      statusElement.textContent = `Trade failed: ${response.error || 'Unknown error'}`;
-      statusElement.style.color = '#ef4444';
-    }
-  });
+  );
 }
 
 // Function to save TradingView cookies
@@ -325,8 +330,8 @@ function saveTradingViewCookies() {
     type: 'SAVE_COOKIES',
     data: {
       site: 'tradingview',
-      cookies: cookies
-    }
+      cookies: cookies,
+    },
   });
 }
 
@@ -341,7 +346,7 @@ function restoreTradingViewCookies(cookies) {
 window.addEventListener('load', () => {
   injectTradeControls();
   saveTradingViewCookies();
-  
+
   // Listen for cookie updates from background script
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'RESTORE_COOKIES' && request.data.site === 'tradingview') {

@@ -4,42 +4,44 @@ import { saveAs } from 'file-saver';
 export const createExtensionZip = async (): Promise<void> => {
   try {
     const zip = new JSZip();
-    
+
     // Create manifest.json
-    zip.file("manifest.json", JSON.stringify({
-      "manifest_version": 3,
-      "name": "Poloniex Trading Extension",
-      "version": "1.0.0",
-      "description": "Quick access to Poloniex trading platform and community chat",
-      "action": {
-        "default_popup": "popup.html",
-        "default_icon": {
-          "16": "icons/icon16.png",
-          "48": "icons/icon48.png",
-          "128": "icons/icon128.png"
-        }
-      },
-      "permissions": [
-        "storage",
-        "tabs",
-        "notifications",
-        "alarms"
-      ],
-      "host_permissions": [
-        "http://localhost:*/*"
-      ],
-      "background": {
-        "service_worker": "background.js"
-      },
-      "icons": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-      }
-    }, null, 2));
-    
+    zip.file(
+      'manifest.json',
+      JSON.stringify(
+        {
+          manifest_version: 3,
+          name: 'Poloniex Trading Extension',
+          version: '1.0.0',
+          description: 'Quick access to Poloniex trading platform and community chat',
+          action: {
+            default_popup: 'popup.html',
+            default_icon: {
+              '16': 'icons/icon16.png',
+              '48': 'icons/icon48.png',
+              '128': 'icons/icon128.png',
+            },
+          },
+          permissions: ['storage', 'tabs', 'notifications', 'alarms'],
+          host_permissions: ['http://localhost:*/*'],
+          background: {
+            service_worker: 'background.js',
+          },
+          icons: {
+            '16': 'icons/icon16.png',
+            '48': 'icons/icon48.png',
+            '128': 'icons/icon128.png',
+          },
+        },
+        null,
+        2
+      )
+    );
+
     // Create popup.html
-    zip.file("popup.html", `<!DOCTYPE html>
+    zip.file(
+      'popup.html',
+      `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -112,10 +114,13 @@ export const createExtensionZip = async (): Promise<void> => {
   </div>
   <script src="popup.js"></script>
 </body>
-</html>`);
+</html>`
+    );
 
     // Create popup.css
-    zip.file("popup.css", `* {
+    zip.file(
+      'popup.css',
+      `* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -310,10 +315,13 @@ button.sell:hover {
 
 .open-app:hover {
   background-color: #2563eb;
-}`);
+}`
+    );
 
     // Create popup.js
-    zip.file("popup.js", `document.addEventListener('DOMContentLoaded', function() {
+    zip.file(
+      'popup.js',
+      `document.addEventListener('DOMContentLoaded', function() {
   // DOM elements
   const pairSelect = document.getElementById('pair-select');
   const buyBtn = document.getElementById('buy-btn');
@@ -419,10 +427,13 @@ button.sell:hover {
   setTimeout(() => {
     addMessageToChat('market_bot', 'BTC just broke $52,000!');
   }, 3000);
-});`);
+});`
+    );
 
     // Create background.js
-    zip.file("background.js", `// Background script for the trading extension
+    zip.file(
+      'background.js',
+      `// Background script for the trading extension
 
 // Listen for installation
 chrome.runtime.onInstalled.addListener(() => {
@@ -511,38 +522,39 @@ function checkMarketConditions() {
       console.error('Failed to create notification:', error);
     }
   }
-}`);
+}`
+    );
 
     // Create icons folder
-    const icons = zip.folder("icons");
-    
+    const icons = zip.folder('icons');
+
     // Create simple SVG icons (as data URLs)
     const icon16 = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>')}`;
     const icon48 = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>')}`;
     const icon128 = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>')}`;
-    
+
     // Fetch SVG data and convert to PNG
     const fetchImage = async (dataURL: string) => {
       const response = await fetch(dataURL);
       return await response.blob();
     };
-    
+
     // Add icons to the zip file
     const icon16Blob = await fetchImage(icon16);
     const icon48Blob = await fetchImage(icon48);
     const icon128Blob = await fetchImage(icon128);
-    
-    icons?.file("icon16.png", icon16Blob);
-    icons?.file("icon48.png", icon48Blob);
-    icons?.file("icon128.png", icon128Blob);
-    
+
+    icons?.file('icon16.png', icon16Blob);
+    icons?.file('icon48.png', icon48Blob);
+    icons?.file('icon128.png', icon128Blob);
+
     // Generate zip file
-    const content = await zip.generateAsync({ type: "blob" });
-    saveAs(content, "poloniex-trading-extension.zip");
-    
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'poloniex-trading-extension.zip');
+
     return Promise.resolve();
   } catch (error) {
-    console.error("Error creating extension zip:", error);
+    console.error('Error creating extension zip:', error);
     return Promise.reject(error);
   }
 };

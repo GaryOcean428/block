@@ -11,7 +11,7 @@ import {
   Legend,
   TimeScale,
   Filler,
-  ChartOptions
+  ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { MarketData } from '../../types';
@@ -38,12 +38,12 @@ interface PriceChartProps {
 
 const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
   const filteredData = data.filter(item => item.pair === pair);
-  
+
   const labels = filteredData.map(item => {
     const date = new Date(item.timestamp);
     return date.toLocaleTimeString();
   });
-  
+
   const chartData = {
     labels,
     datasets: [
@@ -61,11 +61,11 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
         type: 'bar',
         backgroundColor: 'rgba(59, 130, 246, 0.2)',
         borderColor: 'rgba(59, 130, 246, 0.2)',
-        yAxisID: 'volume'
+        yAxisID: 'volume',
       },
     ],
   };
-  
+
   const options: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
@@ -77,36 +77,36 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             const dataIndex = context.dataIndex;
             const dataPoint = filteredData[dataIndex];
             return [
               `Price: $${dataPoint.close.toFixed(2)}`,
               `High: $${dataPoint.high.toFixed(2)}`,
               `Low: $${dataPoint.low.toFixed(2)}`,
-              `Volume: ${dataPoint.volume.toFixed(2)}`
+              `Volume: ${dataPoint.volume.toFixed(2)}`,
             ];
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       y: {
         beginAtZero: false,
         position: 'left',
         grid: {
-          display: true
-        }
+          display: true,
+        },
       },
       volume: {
         position: 'right',
         grid: {
-          display: false
-        }
-      }
+          display: false,
+        },
+      },
     },
   };
-  
+
   return <Line options={options} data={chartData} height={80} />;
 };
 

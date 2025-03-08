@@ -12,16 +12,16 @@ interface StrategyDetailsProps {
   isOptimizing?: boolean;
 }
 
-const StrategyDetails: React.FC<StrategyDetailsProps> = ({ 
+const StrategyDetails: React.FC<StrategyDetailsProps> = ({
   strategy,
   backtestResults,
   isBacktesting,
-  isOptimizing
+  isOptimizing,
 }) => {
   const { marketData } = useTradingContext();
   const [timeframe, setTimeframe] = useState<'1h' | '4h' | '1d'>('1h');
   const [chartType, setChartType] = useState<'candlestick' | 'line'>('candlestick');
-  
+
   const getStrategyTypeIcon = (type: StrategyType) => {
     switch (type) {
       case StrategyType.MA_CROSSOVER:
@@ -34,7 +34,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
         return <Zap className="h-6 w-6 text-gray-500" />;
     }
   };
-  
+
   const getStrategyTypeName = (type: StrategyType) => {
     switch (type) {
       case StrategyType.MA_CROSSOVER:
@@ -47,7 +47,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
         return type;
     }
   };
-  
+
   const getStrategyDescription = (type: StrategyType) => {
     switch (type) {
       case StrategyType.MA_CROSSOVER:
@@ -60,7 +60,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
         return 'Custom trading strategy.';
     }
   };
-  
+
   const renderParameters = () => {
     switch (strategy.type) {
       case StrategyType.MA_CROSSOVER:
@@ -110,14 +110,12 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
         return null;
     }
   };
-  
+
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center">
-          <div className="mr-4">
-            {getStrategyTypeIcon(strategy.type)}
-          </div>
+          <div className="mr-4">{getStrategyTypeIcon(strategy.type)}</div>
           <div>
             <h2 className="text-xl font-bold">{strategy.name}</h2>
             <div className="flex items-center text-sm text-gray-500 mt-1">
@@ -145,12 +143,12 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
           )}
         </div>
       </div>
-      
+
       <div className="mb-6">
         <div className="text-gray-700 mb-4">{getStrategyDescription(strategy.type)}</div>
         {renderParameters()}
       </div>
-      
+
       <div className="mb-6">
         <h3 className="text-lg font-medium mb-3">Performance</h3>
         <div className="grid grid-cols-3 gap-4 mb-4">
@@ -158,9 +156,11 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
             <>
               <div className="bg-gray-50 p-3 rounded-md">
                 <div className="text-sm text-gray-500">Total P&L</div>
-                <div className={`text-lg font-semibold ${
-                  strategy.performance.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <div
+                  className={`text-lg font-semibold ${
+                    strategy.performance.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
                   {strategy.performance.totalPnL >= 0 ? '+' : ''}
                   {strategy.performance.totalPnL.toFixed(2)}
                 </div>
@@ -178,7 +178,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
             </>
           )}
         </div>
-        
+
         {backtestResults && (
           <div className="bg-blue-50 p-4 rounded-lg">
             <h4 className="font-medium mb-3">Backtest Results</h4>
@@ -211,13 +211,13 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
           </div>
         )}
       </div>
-      
+
       <div>
         <h3 className="text-lg font-medium mb-3">Market Data</h3>
         <div className="flex space-x-4 mb-4">
           <select
             value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value as any)}
+            onChange={e => setTimeframe(e.target.value as any)}
             className="px-3 py-1 border border-gray-300 rounded-md"
           >
             <option value="1h">1 Hour</option>
@@ -226,7 +226,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
           </select>
           <select
             value={chartType}
-            onChange={(e) => setChartType(e.target.value as any)}
+            onChange={e => setChartType(e.target.value as any)}
             className="px-3 py-1 border border-gray-300 rounded-md"
           >
             <option value="candlestick">Candlestick</option>

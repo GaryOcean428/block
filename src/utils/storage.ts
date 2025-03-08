@@ -14,7 +14,7 @@ export const STORAGE_KEYS = {
   TRADE_NOTIFICATIONS: 'poloniex_trade_notifications',
   PRICE_ALERTS: 'poloniex_price_alerts',
   CHAT_NOTIFICATIONS: 'poloniex_chat_notifications',
-  SHOW_EXTENSION: 'poloniex_show_extension'
+  SHOW_EXTENSION: 'poloniex_show_extension',
 };
 
 /**

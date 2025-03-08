@@ -10,8 +10,8 @@ const StrategyPerformance: React.FC<StrategyPerformanceProps> = ({ strategies })
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {strategies.map(strategy => (
-        <div 
-          key={strategy.id} 
+        <div
+          key={strategy.id}
           className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
         >
           <div className="flex items-start justify-between mb-2">
@@ -23,19 +23,21 @@ const StrategyPerformance: React.FC<StrategyPerformanceProps> = ({ strategies })
               <BarChart2 className="h-5 w-5 text-blue-500" />
             </div>
           </div>
-          
+
           {strategy.performance && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Total P&L</span>
-                <span className={`font-medium ${
-                  strategy.performance.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <span
+                  className={`font-medium ${
+                    strategy.performance.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
                   {strategy.performance.totalPnL >= 0 ? '+' : ''}
                   {strategy.performance.totalPnL.toFixed(2)}
                 </span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Win Rate</span>
                 <span className="font-medium flex items-center">
@@ -47,7 +49,7 @@ const StrategyPerformance: React.FC<StrategyPerformanceProps> = ({ strategies })
                   )}
                 </span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Trades</span>
                 <span className="font-medium">{strategy.performance.tradesCount}</span>

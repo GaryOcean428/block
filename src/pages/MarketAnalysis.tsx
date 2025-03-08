@@ -7,31 +7,31 @@ import MockModeNotice from '../components/MockModeNotice';
 const MarketAnalysis: React.FC = () => {
   const { marketData, isMockMode } = useTradingContext();
   const [selectedPair, setSelectedPair] = useState('BTC-USDT');
-  
+
   // Filter data for selected pair
   const pairData = marketData.filter(data => data.pair === selectedPair);
-  
+
   // Calculate market metrics
   const latestPrice = pairData[pairData.length - 1]?.close || 0;
   const previousPrice = pairData[pairData.length - 2]?.close || 0;
   const priceChange = latestPrice - previousPrice;
   const priceChangePercent = (priceChange / previousPrice) * 100;
-  
+
   const volume24h = pairData.reduce((sum, data) => sum + data.volume, 0);
-  
+
   // Calculate price ranges
   const high24h = Math.max(...pairData.map(data => data.high));
   const low24h = Math.min(...pairData.map(data => data.low));
-  
+
   return (
     <div className="space-y-6">
       {isMockMode && <MockModeNotice />}
-      
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Market Analysis</h1>
         <select
           value={selectedPair}
-          onChange={(e) => setSelectedPair(e.target.value)}
+          onChange={e => setSelectedPair(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="BTC-USDT">BTC/USDT</option>
@@ -39,7 +39,7 @@ const MarketAnalysis: React.FC = () => {
           <option value="SOL-USDT">SOL/USDT</option>
         </select>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between">
@@ -50,7 +50,7 @@ const MarketAnalysis: React.FC = () => {
             <span className="text-lg font-semibold">${latestPrice.toFixed(2)}</span>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -61,12 +61,15 @@ const MarketAnalysis: React.FC = () => {
               )}
               <span className="text-gray-500">24h Change</span>
             </div>
-            <span className={`text-lg font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
+            <span
+              className={`text-lg font-semibold ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {priceChangePercent >= 0 ? '+' : ''}
+              {priceChangePercent.toFixed(2)}%
             </span>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -76,7 +79,7 @@ const MarketAnalysis: React.FC = () => {
             <span className="text-lg font-semibold">${volume24h.toLocaleString()}</span>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -89,14 +92,14 @@ const MarketAnalysis: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4">Price Chart</h2>
         <div className="h-[400px]">
           <PriceChart data={marketData} pair={selectedPair} />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold mb-4">Order Book</h2>
@@ -130,7 +133,7 @@ const MarketAnalysis: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-bold mb-4">Recent Trades</h2>
           <div className="space-y-2">

@@ -15,7 +15,7 @@ export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
-    errorInfo: null
+    errorInfo: null,
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -40,10 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="bg-gray-100 p-4 rounded mb-4 overflow-auto max-h-60">
               <p className="font-mono text-sm">{this.state.error?.toString()}</p>
             </div>
-            <button
-              className="w-full btn btn-primary"
-              onClick={() => window.location.reload()}
-            >
+            <button className="w-full btn btn-primary" onClick={() => window.location.reload()}>
               Reload Application
             </button>
           </div>

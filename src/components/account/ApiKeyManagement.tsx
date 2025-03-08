@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Key, Copy, Eye, EyeOff, Plus, Trash2, AlertTriangle, Clock, Shield, RefreshCw } from 'lucide-react';
+import {
+  Key,
+  Copy,
+  Eye,
+  EyeOff,
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Clock,
+  Shield,
+  RefreshCw,
+} from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface ApiKey {
@@ -25,11 +36,11 @@ const ApiKeyManagement: React.FC = () => {
     permissions: {
       read: true,
       trade: false,
-      withdraw: false
+      withdraw: false,
     },
-    expiration: 'never'
+    expiration: 'never',
   });
-  
+
   // Mock API keys
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([
     {
@@ -39,64 +50,70 @@ const ApiKeyManagement: React.FC = () => {
       permissions: {
         read: true,
         trade: true,
-        withdraw: false
+        withdraw: false,
       },
       createdAt: '2023-05-15T14:30:00Z',
       lastUsed: '2023-06-10T09:45:23Z',
-      expiresAt: null
-    }
+      expiresAt: null,
+    },
   ]);
-  
+
   // Handle form input changes
   const handlePermissionChange = (permission: 'read' | 'trade' | 'withdraw') => {
     setNewKeyForm({
       ...newKeyForm,
       permissions: {
         ...newKeyForm.permissions,
-        [permission]: !newKeyForm.permissions[permission]
-      }
+        [permission]: !newKeyForm.permissions[permission],
+      },
     });
   };
-  
+
   // Copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     // Here you might want to show a toast notification
   };
-  
+
   // Create a new API key
   const handleCreateKey = () => {
     // In a real app, you would call your API here
     const newKey: ApiKey = {
       id: Math.random().toString(36).substring(2, 11),
       name: newKeyForm.name,
-      key: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+      key:
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       permissions: newKeyForm.permissions,
       createdAt: new Date().toISOString(),
       lastUsed: new Date().toISOString(),
-      expiresAt: newKeyForm.expiration === 'never' ? null : new Date(Date.now() + parseInt(newKeyForm.expiration) * 24 * 60 * 60 * 1000).toISOString()
+      expiresAt:
+        newKeyForm.expiration === 'never'
+          ? null
+          : new Date(
+              Date.now() + parseInt(newKeyForm.expiration) * 24 * 60 * 60 * 1000
+            ).toISOString(),
     };
-    
+
     setApiKeys([...apiKeys, newKey]);
     setShowCreateForm(false);
-    
+
     // Reset form
     setNewKeyForm({
       name: '',
       permissions: {
         read: true,
         trade: false,
-        withdraw: false
+        withdraw: false,
       },
-      expiration: 'never'
+      expiration: 'never',
     });
   };
-  
+
   // Delete API key
   const handleDeleteKey = (id: string) => {
     setApiKeys(apiKeys.filter(key => key.id !== id));
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 text-blue-700">
@@ -105,13 +122,13 @@ const ApiKeyManagement: React.FC = () => {
           <div>
             <h3 className="font-medium">API Key Security</h3>
             <p className="mt-1 text-sm">
-              Keep your API keys secure. Never share them with others or expose them in client-side code.
-              Keys with trade and withdraw permissions should be used with extreme caution.
+              Keep your API keys secure. Never share them with others or expose them in client-side
+              code. Keys with trade and withdraw permissions should be used with extreme caution.
             </p>
           </div>
         </div>
       </div>
-      
+
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-medium">Your API Keys</h2>
         <button
@@ -122,7 +139,7 @@ const ApiKeyManagement: React.FC = () => {
           Create New Key
         </button>
       </div>
-      
+
       {showCreateForm && (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -137,17 +154,15 @@ const ApiKeyManagement: React.FC = () => {
                 type="text"
                 id="key-name"
                 value={newKeyForm.name}
-                onChange={(e) => setNewKeyForm({...newKeyForm, name: e.target.value})}
+                onChange={e => setNewKeyForm({ ...newKeyForm, name: e.target.value })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="e.g., Trading Bot"
                 required
               />
             </div>
-            
+
             <div>
-              <span className="block text-sm font-medium text-gray-700 mb-2">
-                Permissions
-              </span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">Permissions</span>
               <div className="space-y-2">
                 <div className="flex items-center">
                   <input
@@ -181,7 +196,10 @@ const ApiKeyManagement: React.FC = () => {
                     onChange={() => handlePermissionChange('withdraw')}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="permission-withdraw" className="ml-2 flex items-center text-sm text-gray-700">
+                  <label
+                    htmlFor="permission-withdraw"
+                    className="ml-2 flex items-center text-sm text-gray-700"
+                  >
                     Withdraw (Transfer funds out of your account)
                     <span className="ml-2 text-red-600 flex items-center text-xs">
                       <AlertTriangle className="h-3 w-3 mr-0.5" />
@@ -191,7 +209,7 @@ const ApiKeyManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="key-expiration" className="block text-sm font-medium text-gray-700">
                 Expiration
@@ -199,7 +217,7 @@ const ApiKeyManagement: React.FC = () => {
               <select
                 id="key-expiration"
                 value={newKeyForm.expiration}
-                onChange={(e) => setNewKeyForm({...newKeyForm, expiration: e.target.value})}
+                onChange={e => setNewKeyForm({ ...newKeyForm, expiration: e.target.value })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="never">Never</option>
@@ -209,7 +227,7 @@ const ApiKeyManagement: React.FC = () => {
                 <option value="365">1 Year</option>
               </select>
             </div>
-            
+
             <div className="flex justify-end space-x-3 pt-2">
               <button
                 type="button"
@@ -229,7 +247,7 @@ const ApiKeyManagement: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
           <h3 className="font-medium">Current API Keys</h3>
@@ -245,22 +263,40 @@ const ApiKeyManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Name
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   API Key
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Permissions
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Created
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Last Used
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Expires
                 </th>
                 <th scope="col" className="relative px-4 py-3">
@@ -269,7 +305,7 @@ const ApiKeyManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {apiKeys.map((key) => (
+              {apiKeys.map(key => (
                 <tr key={key.id}>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                     {key.name}

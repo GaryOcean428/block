@@ -40,7 +40,7 @@ const defaultSettings: SettingsState = {
   tradeNotifications: true,
   priceAlerts: false,
   chatNotifications: true,
-  showExtension: true
+  showExtension: true,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -52,20 +52,23 @@ interface SettingsProviderProps {
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   // Check if we can access localStorage
   const canUseStorage = isStorageAvailable();
-  
+
   // Get initial settings from localStorage or environment variables
   const getInitialSettings = (): SettingsState => {
     if (!canUseStorage) {
       return {
         ...defaultSettings,
         apiKey: import.meta.env.VITE_POLONIEX_API_KEY || '',
-        apiSecret: import.meta.env.VITE_POLONIEX_API_SECRET || ''
+        apiSecret: import.meta.env.VITE_POLONIEX_API_SECRET || '',
       };
     }
 
     return {
       apiKey: getStorageItem(STORAGE_KEYS.API_KEY, import.meta.env.VITE_POLONIEX_API_KEY || ''),
-      apiSecret: getStorageItem(STORAGE_KEYS.API_SECRET, import.meta.env.VITE_POLONIEX_API_SECRET || ''),
+      apiSecret: getStorageItem(
+        STORAGE_KEYS.API_SECRET,
+        import.meta.env.VITE_POLONIEX_API_SECRET || ''
+      ),
       isLiveTrading: getStorageItem(STORAGE_KEYS.IS_LIVE_TRADING, false),
       darkMode: getStorageItem(STORAGE_KEYS.DARK_MODE, false),
       defaultPair: getStorageItem(STORAGE_KEYS.DEFAULT_PAIR, 'BTC-USDT'),
@@ -73,7 +76,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       tradeNotifications: getStorageItem(STORAGE_KEYS.TRADE_NOTIFICATIONS, true),
       priceAlerts: getStorageItem(STORAGE_KEYS.PRICE_ALERTS, false),
       chatNotifications: getStorageItem(STORAGE_KEYS.CHAT_NOTIFICATIONS, true),
-      showExtension: getStorageItem(STORAGE_KEYS.SHOW_EXTENSION, true)
+      showExtension: getStorageItem(STORAGE_KEYS.SHOW_EXTENSION, true),
     };
   };
 
@@ -89,7 +92,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const updateSettings = (newSettings: Partial<SettingsState>) => {
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
-      
+
       // Special handling for live trading mode
       if (newSettings.isLiveTrading !== undefined) {
         // Only allow live trading if we have API credentials
@@ -98,7 +101,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
           updated.isLiveTrading = false;
         }
       }
-      
+
       // Only persist to localStorage if it's available
       if (canUseStorage) {
         // Persist each updated setting to localStorage
@@ -107,7 +110,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
           setStorageItem(storageKey, value);
         });
       }
-      
+
       return updated;
     });
   };
@@ -115,7 +118,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Reset all settings to default
   const resetSettings = () => {
     setSettings(defaultSettings);
-    
+
     if (canUseStorage) {
       Object.values(STORAGE_KEYS).forEach(key => {
         localStorage.removeItem(key);
@@ -129,7 +132,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         ...settings,
         updateSettings,
         resetSettings,
-        hasStoredCredentials
+        hasStoredCredentials,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // DOM elements - check for existence before using
   const pairSelect = document.getElementById('pair-select');
   const buyBtn = document.getElementById('buy-btn');
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Get base URL from current tab or default to localhost
   let appURL = 'http://localhost:5173';
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
     if (tabs[0]?.url) {
       try {
         const url = new URL(tabs[0].url);
@@ -31,9 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function initializeEventListeners() {
     // Only add event listeners if elements exist
     if (openAppBtn) {
-      openAppBtn.addEventListener('click', function() {
+      openAppBtn.addEventListener('click', function () {
         // If we're on Poloniex, just focus the tab
-        chrome.tabs.query({ url: '*://*.poloniex.com/*' }, (tabs) => {
+        chrome.tabs.query({ url: '*://*.poloniex.com/*' }, tabs => {
           if (tabs.length > 0) {
             chrome.tabs.update(tabs[0].id, { active: true });
           } else {
@@ -45,13 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (settingsBtn) {
-      settingsBtn.addEventListener('click', async function() {
+      settingsBtn.addEventListener('click', async function () {
         // Open settings in extension popup
         const popup = document.querySelector('.extension-container');
         if (popup) {
           // Save current content
           const originalContent = popup.innerHTML;
-          
+
           // Load settings UI
           popup.innerHTML = `
             <div class="settings-page">
@@ -102,28 +102,30 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
           `;
-          
+
           // Add back button handler
           document.getElementById('back-btn').addEventListener('click', () => {
             popup.innerHTML = originalContent;
             initializeEventListeners(); // Re-initialize main popup listeners
           });
-          
+
           // Load current settings
-          chrome.storage.sync.get([
-            'apiKey',
-            'apiSecret',
-            'liveTrading',
-            'tradeNotifications',
-            'priceAlerts'
-          ], (settings) => {
-            if (settings.apiKey) document.getElementById('api-key').value = settings.apiKey;
-            if (settings.apiSecret) document.getElementById('api-secret').value = settings.apiSecret;
-            if (settings.liveTrading) document.getElementById('live-trading').checked = settings.liveTrading;
-            if (settings.tradeNotifications) document.getElementById('trade-notifications').checked = settings.tradeNotifications;
-            if (settings.priceAlerts) document.getElementById('price-alerts').checked = settings.priceAlerts;
-          });
-          
+          chrome.storage.sync.get(
+            ['apiKey', 'apiSecret', 'liveTrading', 'tradeNotifications', 'priceAlerts'],
+            settings => {
+              if (settings.apiKey) document.getElementById('api-key').value = settings.apiKey;
+              if (settings.apiSecret)
+                document.getElementById('api-secret').value = settings.apiSecret;
+              if (settings.liveTrading)
+                document.getElementById('live-trading').checked = settings.liveTrading;
+              if (settings.tradeNotifications)
+                document.getElementById('trade-notifications').checked =
+                  settings.tradeNotifications;
+              if (settings.priceAlerts)
+                document.getElementById('price-alerts').checked = settings.priceAlerts;
+            }
+          );
+
           // Add save handler
           document.getElementById('save-settings').addEventListener('click', () => {
             const settings = {
@@ -131,9 +133,9 @@ document.addEventListener('DOMContentLoaded', function() {
               apiSecret: document.getElementById('api-secret').value,
               liveTrading: document.getElementById('live-trading').checked,
               tradeNotifications: document.getElementById('trade-notifications').checked,
-              priceAlerts: document.getElementById('price-alerts').checked
+              priceAlerts: document.getElementById('price-alerts').checked,
             };
-            
+
             chrome.storage.sync.set(settings, () => {
               showNotification('Settings saved successfully');
               // Return to main view after saving
@@ -146,14 +148,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (buyBtn) {
-      buyBtn.addEventListener('click', function() {
+      buyBtn.addEventListener('click', function () {
         const pair = pairSelect?.value || 'BTC-USDT';
         showNotification(`Buy order placed for ${pair}`);
       });
     }
 
     if (sellBtn) {
-      sellBtn.addEventListener('click', function() {
+      sellBtn.addEventListener('click', function () {
         const pair = pairSelect?.value || 'BTC-USDT';
         showNotification(`Sell order placed for ${pair}`);
       });
@@ -162,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Send chat message
     if (sendBtn && messageInput) {
       sendBtn.addEventListener('click', sendMessage);
-      messageInput.addEventListener('keypress', function(e) {
+      messageInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
           sendMessage();
         }
@@ -172,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function sendMessage() {
     if (!messageInput || !chatMessages) return;
-    
+
     const message = messageInput.value.trim();
     if (message) {
       addMessageToChat(username, message);
@@ -182,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function addMessageToChat(username, text) {
     if (!chatMessages) return;
-    
+
     const messageElement = document.createElement('div');
     messageElement.className = 'message';
     messageElement.innerHTML = `
@@ -207,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
     notification.style.borderRadius = '4px';
     notification.style.zIndex = '1000';
     document.body.appendChild(notification);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
       if (notification.parentNode) {

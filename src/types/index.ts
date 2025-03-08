@@ -1,7 +1,7 @@
 export enum StrategyType {
   MA_CROSSOVER = 'MA_CROSSOVER',
   RSI = 'RSI',
-  BREAKOUT = 'BREAKOUT'
+  BREAKOUT = 'BREAKOUT',
 }
 
 export interface StrategyParameters {
@@ -63,7 +63,13 @@ export interface Trade {
 }
 
 export interface ExchangeService {
-  placeOrder: (pair: string, side: 'buy' | 'sell', type: 'limit' | 'market', quantity: number, price?: number) => Promise<any>;
+  placeOrder: (
+    pair: string,
+    side: 'buy' | 'sell',
+    type: 'limit' | 'market',
+    quantity: number,
+    price?: number
+  ) => Promise<any>;
   errors: string[];
   addError: (error: string) => void;
   clearErrors: () => void;

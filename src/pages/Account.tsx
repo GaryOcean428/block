@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Clock, 
-  CreditCard, 
-  Download, 
-  Upload, 
-  User, 
-  Shield, 
-  Key, 
+import {
+  Clock,
+  CreditCard,
+  Download,
+  Upload,
+  User,
+  Shield,
+  Key,
   RefreshCw,
   ArrowUpRight,
   ArrowDownRight,
   DollarSign,
-  BarChart4
+  BarChart4,
 } from 'lucide-react';
 import { useTradingContext } from '../context/TradingContext';
 import { useSettings } from '../context/SettingsContext';
@@ -24,7 +24,9 @@ import { mockTransactions } from '../data/mockData';
 const Account: React.FC = () => {
   const { accountBalance, isLoading, isMockMode, refreshApiConnection } = useTradingContext();
   const { apiKey, apiSecret } = useSettings();
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'api' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'api' | 'settings'>(
+    'overview'
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -38,7 +40,7 @@ const Account: React.FC = () => {
       setIsRefreshing(false);
     }
   };
-  
+
   // Format numbers for display
   const formatCurrency = (value: number | string) => {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -46,10 +48,10 @@ const Account: React.FC = () => {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(numValue);
   };
-  
+
   // Parse account data
   const accountData = {
     totalBalance: parseFloat(accountBalance?.totalAmount || '0'),
@@ -66,14 +68,14 @@ const Account: React.FC = () => {
     tradingLevel: 'Advanced',
     feeRate: '0.1%',
   };
-  
+
   return (
     <div className="space-y-6">
       {isMockMode && <MockModeNotice />}
-      
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Account Overview</h1>
-        <button 
+        <button
           onClick={handleRefresh}
           disabled={isRefreshing}
           className="flex items-center px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
@@ -82,47 +84,55 @@ const Account: React.FC = () => {
           {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
         </button>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-md">
         <div className="flex border-b">
-          <button 
-            onClick={() => setActiveTab('overview')} 
+          <button
+            onClick={() => setActiveTab('overview')}
             className={`px-4 py-3 font-medium text-sm flex items-center ${
-              activeTab === 'overview' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'overview'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <User className="h-4 w-4 mr-2" />
             Overview
           </button>
-          <button 
-            onClick={() => setActiveTab('transactions')} 
+          <button
+            onClick={() => setActiveTab('transactions')}
             className={`px-4 py-3 font-medium text-sm flex items-center ${
-              activeTab === 'transactions' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'transactions'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Transactions
           </button>
-          <button 
-            onClick={() => setActiveTab('api')} 
+          <button
+            onClick={() => setActiveTab('api')}
             className={`px-4 py-3 font-medium text-sm flex items-center ${
-              activeTab === 'api' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'api'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <Key className="h-4 w-4 mr-2" />
             API Keys
           </button>
-          <button 
-            onClick={() => setActiveTab('settings')} 
+          <button
+            onClick={() => setActiveTab('settings')}
             className={`px-4 py-3 font-medium text-sm flex items-center ${
-              activeTab === 'settings' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'settings'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             <Shield className="h-4 w-4 mr-2" />
             Security
           </button>
         </div>
-        
+
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="space-y-6">
@@ -132,7 +142,9 @@ const Account: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-blue-100 text-sm">Total Balance</p>
-                      <p className="text-2xl font-bold mt-1">{formatCurrency(accountData.totalBalance)}</p>
+                      <p className="text-2xl font-bold mt-1">
+                        {formatCurrency(accountData.totalBalance)}
+                      </p>
                     </div>
                     <div className="bg-blue-400/30 p-2 rounded-full">
                       <DollarSign className="h-6 w-6" />
@@ -141,7 +153,9 @@ const Account: React.FC = () => {
                   <div className="mt-4 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-blue-100">Available</span>
-                      <span className="font-medium">{formatCurrency(accountData.availableBalance)}</span>
+                      <span className="font-medium">
+                        {formatCurrency(accountData.availableBalance)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-blue-100">Equity</span>
@@ -149,13 +163,16 @@ const Account: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-gray-500 text-sm">Profit & Loss</p>
-                      <p className={`text-2xl font-bold mt-1 ${accountData.todayPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {accountData.todayPnL >= 0 ? '+' : ''}{formatCurrency(accountData.todayPnL)}
+                      <p
+                        className={`text-2xl font-bold mt-1 ${accountData.todayPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {accountData.todayPnL >= 0 ? '+' : ''}
+                        {formatCurrency(accountData.todayPnL)}
                       </p>
                     </div>
                     <div className="bg-gray-100 p-2 rounded-full">
@@ -165,19 +182,25 @@ const Account: React.FC = () => {
                   <div className="mt-4 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500">Weekly</span>
-                      <span className={`font-medium ${accountData.weeklyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {accountData.weeklyPnL >= 0 ? '+' : ''}{formatCurrency(accountData.weeklyPnL)}
+                      <span
+                        className={`font-medium ${accountData.weeklyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {accountData.weeklyPnL >= 0 ? '+' : ''}
+                        {formatCurrency(accountData.weeklyPnL)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-gray-500">Monthly</span>
-                      <span className={`font-medium ${accountData.monthlyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {accountData.monthlyPnL >= 0 ? '+' : ''}{formatCurrency(accountData.monthlyPnL)}
+                      <span
+                        className={`font-medium ${accountData.monthlyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {accountData.monthlyPnL >= 0 ? '+' : ''}
+                        {formatCurrency(accountData.monthlyPnL)}
                       </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
                   <div className="flex justify-between items-start">
                     <div>
@@ -206,7 +229,7 @@ const Account: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Deposit/Withdraw Buttons */}
               <div className="flex space-x-4">
                 <button className="flex items-center justify-center w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700">
@@ -218,7 +241,7 @@ const Account: React.FC = () => {
                   Withdraw
                 </button>
               </div>
-              
+
               {/* Account Status */}
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -254,12 +277,12 @@ const Account: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Recent Transactions Summary */}
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                   <h3 className="font-medium">Recent Transactions</h3>
-                  <button 
+                  <button
                     onClick={() => setActiveTab('transactions')}
                     className="text-sm text-blue-600 hover:text-blue-700"
                   >
@@ -270,32 +293,46 @@ const Account: React.FC = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
                           Type
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
                           Amount
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
                           Status
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
                           Date
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {mockTransactions.slice(0, 5).map((transaction) => (
+                      {mockTransactions.slice(0, 5).map(transaction => (
                         <tr key={transaction.id}>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className={`mr-2 flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                                transaction.type === 'DEPOSIT' 
-                                  ? 'bg-green-100' 
-                                  : transaction.type === 'WITHDRAWAL' 
-                                    ? 'bg-red-100' 
-                                    : 'bg-blue-100'
-                              }`}>
+                              <div
+                                className={`mr-2 flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+                                  transaction.type === 'DEPOSIT'
+                                    ? 'bg-green-100'
+                                    : transaction.type === 'WITHDRAWAL'
+                                      ? 'bg-red-100'
+                                      : 'bg-blue-100'
+                                }`}
+                              >
                                 {transaction.type === 'DEPOSIT' && (
                                   <Upload className={`h-4 w-4 text-green-600`} />
                                 )}
@@ -307,8 +344,12 @@ const Account: React.FC = () => {
                                 )}
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900">{transaction.type}</div>
-                                <div className="text-xs text-gray-500">{transaction.description}</div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {transaction.type}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {transaction.description}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -319,13 +360,15 @@ const Account: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              transaction.status === 'COMPLETED' 
-                                ? 'bg-green-100 text-green-800' 
-                                : transaction.status === 'PENDING' 
-                                  ? 'bg-yellow-100 text-yellow-800' 
-                                  : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                transaction.status === 'COMPLETED'
+                                  ? 'bg-green-100 text-green-800'
+                                  : transaction.status === 'PENDING'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                              }`}
+                            >
                               {transaction.status}
                             </span>
                           </td>
@@ -340,15 +383,11 @@ const Account: React.FC = () => {
               </div>
             </div>
           )}
-          
-          {activeTab === 'transactions' && (
-            <TransactionHistory />
-          )}
-          
-          {activeTab === 'api' && (
-            <ApiKeyManagement />
-          )}
-          
+
+          {activeTab === 'transactions' && <TransactionHistory />}
+
+          {activeTab === 'api' && <ApiKeyManagement />}
+
           {activeTab === 'settings' && (
             <div className="space-y-6">
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -367,21 +406,19 @@ const Account: React.FC = () => {
                       Enable
                     </button>
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">Password</h4>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Last updated 45 days ago
-                        </p>
+                        <p className="text-sm text-gray-500 mt-1">Last updated 45 days ago</p>
                       </div>
                       <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm">
                         Change
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -395,7 +432,7 @@ const Account: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -411,7 +448,7 @@ const Account: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                   <h3 className="font-medium">Trading Limits</h3>
@@ -431,7 +468,7 @@ const Account: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm">
                     Request Limit Increase
                   </button>

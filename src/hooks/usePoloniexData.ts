@@ -6,7 +6,10 @@ import { mockMarketData, mockTrades } from '../data/mockData';
 import { useSettings } from '../context/SettingsContext';
 
 // Check if we're running in a WebContainer environment
-const IS_WEBCONTAINER = typeof window !== 'undefined' && window.location && window.location.hostname.includes('webcontainer-api.io');
+const IS_WEBCONTAINER =
+  typeof window !== 'undefined' &&
+  window.location &&
+  window.location.hostname.includes('webcontainer-api.io');
 
 interface PoloniexDataHook {
   marketData: MarketData[];
@@ -29,7 +32,7 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isMockMode, setIsMockMode] = useState<boolean>(true);
-  
+
   // Force API refresh when live trading is toggled
   useEffect(() => {
     if (isLiveTrading && apiKey && apiSecret) {
@@ -41,31 +44,31 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       setIsMockMode(true);
     }
   }, [isLiveTrading, apiKey, apiSecret]);
-  
+
   // Function to refresh API connection when settings change
   const refreshApiConnection = useCallback(() => {
     console.log('Refreshing API connection with new credentials');
     setIsLoading(true);
     poloniexApi.loadCredentials();
-    
+
     // Clear any existing errors
     setError(null);
-    
+
     // Refresh data with new credentials
     Promise.all([
       fetchMarketData(initialPair),
       fetchTrades(initialPair),
-      fetchAccountBalance()
+      fetchAccountBalance(),
     ]).finally(() => {
       setIsLoading(false);
     });
   }, [initialPair]);
-  
+
   // Monitor for changes in API credentials
   useEffect(() => {
     refreshApiConnection();
   }, [apiKey, apiSecret, isLiveTrading, refreshApiConnection]);
-  
+
   const mapPoloniexDataToMarketData = (data: any[]): MarketData[] => {
     try {
       return data.map(item => ({
@@ -75,14 +78,17 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         high: parseFloat(item[2]),
         low: parseFloat(item[3]),
         close: parseFloat(item[4]),
-        volume: parseFloat(item[5])
+        volume: parseFloat(item[5]),
       }));
     } catch (err) {
-      console.error('Error mapping Poloniex data:', err instanceof Error ? err.message : String(err));
+      console.error(
+        'Error mapping Poloniex data:',
+        err instanceof Error ? err.message : String(err)
+      );
       return [];
     }
   };
-  
+
   const mapPoloniexTradeToTrade = (trade: any): Trade => {
     try {
       return {
@@ -94,10 +100,13 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         amount: parseFloat(trade.quantity),
         total: parseFloat(trade.price) * parseFloat(trade.quantity),
         strategyId: '', // Not available from API
-        status: 'COMPLETED'
+        status: 'COMPLETED',
       };
     } catch (err) {
-      console.error('Error mapping Poloniex trade:', err instanceof Error ? err.message : String(err));
+      console.error(
+        'Error mapping Poloniex trade:',
+        err instanceof Error ? err.message : String(err)
+      );
       return {
         id: `error-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         pair: initialPair,
@@ -107,11 +116,11 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         amount: 0,
         total: 0,
         strategyId: '',
-        status: 'FAILED'
+        status: 'FAILED',
       };
     }
   };
-  
+
   const fetchMarketData = useCallback(async (pair: string) => {
     // In WebContainer, skip the actual API call and use mock data immediately
     if (IS_WEBCONTAINER) {
@@ -120,18 +129,18 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       setIsMockMode(true);
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Use AbortController to set a timeout for the fetch
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const data = await poloniexApi.getMarketData(pair);
       clearTimeout(timeoutId);
-      
+
       if (data && Array.isArray(data)) {
         const formattedData = mapPoloniexDataToMarketData(data);
         if (formattedData.length > 0) {
@@ -151,17 +160,20 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       if (err instanceof Error && err.name === 'AbortError') {
         console.log('Market data request timed out, using mock data');
       } else if (!IS_WEBCONTAINER) {
-        console.error('Error fetching market data:', err instanceof Error ? err.message : String(err));
+        console.error(
+          'Error fetching market data:',
+          err instanceof Error ? err.message : String(err)
+        );
         setError('Failed to fetch market data. Using demo data instead.');
       }
-      
+
       setMarketData(mockMarketData);
       setIsMockMode(true);
     } finally {
       setIsLoading(false);
     }
   }, []);
-  
+
   const fetchTrades = useCallback(async (pair: string) => {
     // In WebContainer, skip the actual API call and use mock data immediately
     if (IS_WEBCONTAINER) {
@@ -170,22 +182,24 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       setIsMockMode(true);
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Use AbortController to set a timeout for the fetch
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const data = await poloniexApi.getRecentTrades(pair);
       clearTimeout(timeoutId);
-      
+
       if (data && Array.isArray(data)) {
-        const formattedTrades = data.map(mapPoloniexTradeToTrade).filter(trade => 
-          trade.id.indexOf('error-') !== 0 && !isNaN(trade.price) && !isNaN(trade.amount)
-        );
-        
+        const formattedTrades = data
+          .map(mapPoloniexTradeToTrade)
+          .filter(
+            trade => trade.id.indexOf('error-') !== 0 && !isNaN(trade.price) && !isNaN(trade.amount)
+          );
+
         if (formattedTrades.length > 0) {
           setTrades(formattedTrades);
           setIsMockMode(false);
@@ -205,40 +219,40 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       } else if (!IS_WEBCONTAINER) {
         console.error('Error fetching trades:', err instanceof Error ? err.message : String(err));
       }
-      
+
       setTrades(mockTrades);
       setIsMockMode(true);
     } finally {
       setIsLoading(false);
     }
   }, []);
-  
+
   const fetchAccountBalance = useCallback(async () => {
     // In WebContainer, skip the actual API call and use mock data immediately
     if (IS_WEBCONTAINER) {
       console.log('WebContainer environment detected, using mock account data');
       setAccountBalance({
-        totalAmount: "15478.23",
-        availableAmount: "12345.67",
-        accountEquity: "15820.45",
-        unrealizedPnL: "342.22",
-        todayPnL: "156.78",
-        todayPnLPercentage: "1.02"
+        totalAmount: '15478.23',
+        availableAmount: '12345.67',
+        accountEquity: '15820.45',
+        unrealizedPnL: '342.22',
+        todayPnL: '156.78',
+        todayPnLPercentage: '1.02',
       });
       setIsMockMode(true);
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Use AbortController to set a timeout for the fetch
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const data = await poloniexApi.getAccountBalance();
       clearTimeout(timeoutId);
-      
+
       setAccountBalance(data);
       setIsMockMode(false);
     } catch (err) {
@@ -246,24 +260,27 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       if (err instanceof Error && err.name === 'AbortError') {
         console.log('Account balance request timed out, using mock data');
       } else if (!IS_WEBCONTAINER) {
-        console.error('Error fetching account balance:', err instanceof Error ? err.message : String(err));
+        console.error(
+          'Error fetching account balance:',
+          err instanceof Error ? err.message : String(err)
+        );
       }
-      
+
       // Set default mock balance
       setAccountBalance({
-        totalAmount: "15478.23",
-        availableAmount: "12345.67",
-        accountEquity: "15820.45",
-        unrealizedPnL: "342.22",
-        todayPnL: "156.78",
-        todayPnLPercentage: "1.02"
+        totalAmount: '15478.23',
+        availableAmount: '12345.67',
+        accountEquity: '15820.45',
+        unrealizedPnL: '342.22',
+        todayPnL: '156.78',
+        todayPnLPercentage: '1.02',
       });
       setIsMockMode(true);
     } finally {
       setIsLoading(false);
     }
   }, []);
-  
+
   // Handle real-time updates via WebSocket
   useEffect(() => {
     // In WebContainer, skip WebSocket connection and use mock data immediately
@@ -272,19 +289,20 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       setIsMockMode(true);
       setMarketData(mockMarketData);
       setTrades(mockTrades);
-      
+
       // Skip the rest of the WebSocket setup
       return () => {}; // Empty cleanup function
     }
-    
+
     // Connect to WebSocket for non-WebContainer environments
-    webSocketService.connect()
+    webSocketService
+      .connect()
       .then(() => {
         console.log('WebSocket setup complete');
-        
+
         // Check if we're in mock mode from the WebSocket service
         setIsMockMode(webSocketService.isMockMode());
-        
+
         // Only subscribe if connection was successful
         if (webSocketService.isConnected()) {
           webSocketService.subscribeToMarket(initialPair);
@@ -296,19 +314,22 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         }
       })
       .catch(err => {
-        console.error('Error connecting to WebSocket:', err instanceof Error ? err.message : String(err));
+        console.error(
+          'Error connecting to WebSocket:',
+          err instanceof Error ? err.message : String(err)
+        );
         setIsMockMode(true);
         setMarketData(mockMarketData);
         setTrades(mockTrades);
       });
-    
+
     // Listen for market data updates
     const handleMarketDataUpdate = (data: MarketData) => {
       if (data.pair === initialPair) {
         setMarketData(prevData => {
           // Find if this timestamp already exists
           const existingIndex = prevData.findIndex(item => item.timestamp === data.timestamp);
-          
+
           if (existingIndex >= 0) {
             // Update existing data
             const updatedData = [...prevData];
@@ -322,7 +343,7 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         });
       }
     };
-    
+
     // Listen for trade updates
     const handleTradeUpdate = (trade: Trade) => {
       if (trade.pair === initialPair) {
@@ -335,10 +356,10 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         });
       }
     };
-    
+
     webSocketService.on('marketData', handleMarketDataUpdate);
     webSocketService.on('tradeExecuted', handleTradeUpdate);
-    
+
     // Initial data fetch with small delay to avoid overwhelming the browser
     setTimeout(() => {
       fetchMarketData(initialPair);
@@ -349,7 +370,7 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
         }, 500);
       }, 500);
     }, 500);
-    
+
     // Cleanup
     return () => {
       webSocketService.off('marketData', handleMarketDataUpdate);
@@ -359,7 +380,7 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
       }
     };
   }, [initialPair, fetchMarketData, fetchTrades, fetchAccountBalance]);
-  
+
   return {
     marketData,
     trades,
@@ -370,6 +391,6 @@ export const usePoloniexData = (initialPair: string = 'BTC-USDT'): PoloniexDataH
     fetchMarketData,
     fetchTrades,
     fetchAccountBalance,
-    refreshApiConnection
+    refreshApiConnection,
   };
 };

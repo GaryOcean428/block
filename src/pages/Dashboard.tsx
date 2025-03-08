@@ -11,47 +11,48 @@ import { mockTrades } from '../data/mockData';
 
 const Dashboard: React.FC = () => {
   const { marketData, strategies, activeStrategies, trades, isMockMode } = useTradingContext();
-  
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {isMockMode && <div className="lg:col-span-3"><MockModeNotice /></div>}
-      
+      {isMockMode && (
+        <div className="lg:col-span-3">
+          <MockModeNotice />
+        </div>
+      )}
+
       <div className="lg:col-span-3 mb-2">
         <ExtensionBanner />
       </div>
-      
+
       <div className="lg:col-span-2 space-y-4">
         <div className="trading-card">
           <h2 className="text-xl font-bold mb-4">Market Overview</h2>
           <PriceChart data={marketData} pair="BTC-USDT" />
         </div>
-        
+
         <div className="trading-card">
           <h2 className="text-xl font-bold mb-4">Strategy Performance</h2>
           <StrategyPerformance strategies={strategies} />
         </div>
-        
+
         <div className="trading-card">
           <h2 className="text-xl font-bold mb-4">Recent Trades</h2>
           <RecentTrades trades={trades.length > 0 ? trades : mockTrades} />
         </div>
       </div>
-      
+
       <div className="space-y-4">
         <div className="trading-card">
           <AccountSummary />
         </div>
-        
+
         <div className="trading-card">
           <h2 className="text-xl font-bold mb-4">Active Strategies</h2>
           <div className="space-y-2">
             {strategies
               .filter(strategy => activeStrategies.includes(strategy.id))
               .map(strategy => (
-                <div 
-                  key={strategy.id} 
-                  className="p-3 bg-blue-50 border border-blue-100 rounded-md"
-                >
+                <div key={strategy.id} className="p-3 bg-blue-50 border border-blue-100 rounded-md">
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="font-medium">{strategy.name}</h3>
@@ -63,13 +64,13 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
-            
+
             {activeStrategies.length === 0 && (
               <p className="text-gray-500 text-sm">No active strategies</p>
             )}
           </div>
         </div>
-        
+
         <div className="trading-card">
           <h2 className="text-xl font-bold mb-4">Quick Trade</h2>
           <QuickTrade />

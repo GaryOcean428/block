@@ -1,28 +1,30 @@
 import { Strategy, MarketData, Trade } from '../types';
-import { BacktestResult, BacktestTrade, BacktestOptions, OptimizationResult } from '../types/backtest';
+import {
+  BacktestResult,
+  BacktestTrade,
+  BacktestOptions,
+  OptimizationResult,
+} from '../types/backtest';
 import { executeStrategy } from '../utils/strategyExecutors';
 import { poloniexApi } from './poloniexAPI';
 
 export class BacktestService {
   private static instance: BacktestService;
   private historicalData: Map<string, MarketData[]> = new Map();
-  
+
   private constructor() {}
-  
+
   public static getInstance(): BacktestService {
     if (!BacktestService.instance) {
       BacktestService.instance = new BacktestService();
     }
     return BacktestService.instance;
   }
-  
+
   /**
    * Run backtest for a strategy
    */
-  public async runBacktest(
-    strategy: Strategy,
-    options: BacktestOptions
-  ): Promise<BacktestResult> {
+  public async runBacktest(strategy: Strategy, options: BacktestOptions): Promise<BacktestResult> {
     try {
       // Load historical data
       const data = await this.getHistoricalData(
@@ -30,21 +32,21 @@ export class BacktestService {
         options.startDate,
         options.endDate
       );
-      
+
       // Initialize backtest state
       let balance = options.initialBalance;
       let position = 0;
       const trades: BacktestTrade[] = [];
-      
+
       // Run strategy on each candle
       for (let i = 50; i < data.length; i++) {
         const marketData = data.slice(0, i + 1);
         const signal = executeStrategy(strategy, marketData);
-        
+
         if (signal.signal) {
           const price = data[i].close;
           const amount = this.calculatePositionSize(balance, price);
-          
+
           // Execute trade
           const trade = this.executeTrade(
             signal.signal,
@@ -55,17 +57,17 @@ export class BacktestService {
             options.slippage,
             data[i].timestamp
           );
-          
+
           // Update state
           trades.push(trade);
           balance = trade.balance;
           position = signal.signal === 'BUY' ? amount : 0;
         }
       }
-      
+
       // Calculate final metrics
       const metrics = this.calculateMetrics(trades, options.initialBalance);
-      
+
       return {
         strategyId: strategy.id,
         startDate: options.startDate,
@@ -80,14 +82,14 @@ export class BacktestService {
         maxDrawdown: this.calculateMaxDrawdown(trades),
         sharpeRatio: this.calculateSharpeRatio(trades),
         trades,
-        metrics
+        metrics,
       };
     } catch (error) {
       console.error('Backtest failed:', error);
       throw error;
     }
   }
-  
+
   /**
    * Optimize strategy parameters
    */
@@ -97,32 +99,32 @@ export class BacktestService {
     parameterRanges: Record<string, [number, number, number]>
   ): Promise<OptimizationResult[]> {
     const results: OptimizationResult[] = [];
-    
+
     // Generate parameter combinations
     const combinations = this.generateParameterCombinations(parameterRanges);
-    
+
     // Test each combination
     for (const params of combinations) {
       const testStrategy = {
         ...strategy,
         parameters: {
           ...strategy.parameters,
-          ...params
-        }
+          ...params,
+        },
       };
-      
+
       const result = await this.runBacktest(testStrategy, options);
-      
+
       results.push({
         parameters: params,
-        performance: result
+        performance: result,
       });
     }
-    
+
     // Sort by performance (Sharpe ratio)
     return results.sort((a, b) => b.performance.sharpeRatio - a.performance.sharpeRatio);
   }
-  
+
   /**
    * Get historical market data
    */
@@ -132,17 +134,17 @@ export class BacktestService {
     endDate: string
   ): Promise<MarketData[]> {
     const cacheKey = `${pair}-${startDate}-${endDate}`;
-    
+
     if (this.historicalData.has(cacheKey)) {
       return this.historicalData.get(cacheKey)!;
     }
-    
+
     const data = await poloniexApi.getHistoricalData(pair, startDate, endDate);
     this.historicalData.set(cacheKey, data);
-    
+
     return data;
   }
-  
+
   /**
    * Calculate position size based on available balance
    */
@@ -150,7 +152,7 @@ export class BacktestService {
     // Use 50% of available balance by default
     return (balance * 0.5) / price;
   }
-  
+
   /**
    * Execute a simulated trade
    */
@@ -164,22 +166,18 @@ export class BacktestService {
     timestamp: number
   ): BacktestTrade {
     // Apply slippage to price
-    const executionPrice = type === 'BUY' 
-      ? price * (1 + slippage)
-      : price * (1 - slippage);
-    
+    const executionPrice = type === 'BUY' ? price * (1 + slippage) : price * (1 - slippage);
+
     const total = executionPrice * amount;
     const fee = total * feeRate;
-    
+
     // Calculate PnL
-    const pnl = type === 'SELL' ? total - fee - (price * amount) : 0;
-    const pnlPercent = pnl / (price * amount) * 100;
-    
+    const pnl = type === 'SELL' ? total - fee - price * amount : 0;
+    const pnlPercent = (pnl / (price * amount)) * 100;
+
     // Update balance
-    const newBalance = type === 'BUY'
-      ? balance - total - fee
-      : balance + total - fee;
-    
+    const newBalance = type === 'BUY' ? balance - total - fee : balance + total - fee;
+
     return {
       timestamp,
       type,
@@ -188,20 +186,20 @@ export class BacktestService {
       total,
       pnl,
       pnlPercent,
-      balance: newBalance
+      balance: newBalance,
     };
   }
-  
+
   /**
    * Calculate backtest metrics
    */
   private calculateMetrics(trades: BacktestTrade[], initialBalance: number): BacktestMetrics {
     const dailyReturns = this.calculateDailyReturns(trades);
     const monthlyReturns = this.calculateMonthlyReturns(trades);
-    
+
     const winningTrades = trades.filter(t => t.pnl > 0);
     const losingTrades = trades.filter(t => t.pnl < 0);
-    
+
     return {
       dailyReturns,
       monthlyReturns,
@@ -214,29 +212,29 @@ export class BacktestService {
       largestLoss: Math.min(...trades.map(t => t.pnl)),
       averageHoldingPeriod: this.calculateAverageHoldingPeriod(trades),
       bestMonth: Math.max(...monthlyReturns),
-      worstMonth: Math.min(...monthlyReturns)
+      worstMonth: Math.min(...monthlyReturns),
     };
   }
-  
+
   /**
    * Calculate maximum drawdown
    */
   private calculateMaxDrawdown(trades: BacktestTrade[]): number {
     let peak = -Infinity;
     let maxDrawdown = 0;
-    
+
     trades.forEach(trade => {
       if (trade.balance > peak) {
         peak = trade.balance;
       }
-      
+
       const drawdown = (peak - trade.balance) / peak;
       maxDrawdown = Math.max(maxDrawdown, drawdown);
     });
-    
+
     return maxDrawdown;
   }
-  
+
   /**
    * Calculate Sharpe ratio
    */
@@ -246,41 +244,41 @@ export class BacktestService {
     const stdDev = Math.sqrt(
       returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
     );
-    
+
     return avgReturn / stdDev;
   }
-  
+
   /**
    * Calculate daily returns
    */
   private calculateDailyReturns(trades: BacktestTrade[]): number[] {
     const dailyPnL = new Map<string, number>();
-    
+
     trades.forEach(trade => {
       const date = new Date(trade.timestamp).toISOString().split('T')[0];
       const currentPnL = dailyPnL.get(date) || 0;
       dailyPnL.set(date, currentPnL + trade.pnl);
     });
-    
+
     return Array.from(dailyPnL.values());
   }
-  
+
   /**
    * Calculate monthly returns
    */
   private calculateMonthlyReturns(trades: BacktestTrade[]): number[] {
     const monthlyPnL = new Map<string, number>();
-    
+
     trades.forEach(trade => {
       const date = new Date(trade.timestamp);
       const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
       const currentPnL = monthlyPnL.get(monthKey) || 0;
       monthlyPnL.set(monthKey, currentPnL + trade.pnl);
     });
-    
+
     return Array.from(monthlyPnL.values());
   }
-  
+
   /**
    * Calculate volatility
    */
@@ -290,51 +288,45 @@ export class BacktestService {
       returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
     );
   }
-  
+
   /**
    * Calculate profit factor
    */
   private calculateProfitFactor(trades: BacktestTrade[]): number {
-    const grossProfit = trades
-      .filter(t => t.pnl > 0)
-      .reduce((sum, t) => sum + t.pnl, 0);
-      
-    const grossLoss = Math.abs(
-      trades
-        .filter(t => t.pnl < 0)
-        .reduce((sum, t) => sum + t.pnl, 0)
-    );
-    
+    const grossProfit = trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
+
+    const grossLoss = Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
+
     return grossProfit / grossLoss;
   }
-  
+
   /**
    * Calculate recovery factor
    */
   private calculateRecoveryFactor(trades: BacktestTrade[], initialBalance: number): number {
     const maxDrawdown = this.calculateMaxDrawdown(trades);
     const netProfit = trades[trades.length - 1].balance - initialBalance;
-    
+
     return netProfit / (maxDrawdown * initialBalance);
   }
-  
+
   /**
    * Calculate average holding period
    */
   private calculateAverageHoldingPeriod(trades: BacktestTrade[]): number {
     let totalHoldingTime = 0;
     let positions = 0;
-    
+
     for (let i = 0; i < trades.length - 1; i++) {
       if (trades[i].type === 'BUY' && trades[i + 1].type === 'SELL') {
         totalHoldingTime += trades[i + 1].timestamp - trades[i].timestamp;
         positions++;
       }
     }
-    
+
     return totalHoldingTime / positions / (1000 * 60 * 60); // Convert to hours
   }
-  
+
   /**
    * Generate parameter combinations for optimization
    */
@@ -343,25 +335,22 @@ export class BacktestService {
   ): Record<string, number>[] {
     const combinations: Record<string, number>[] = [];
     const parameters = Object.keys(ranges);
-    
-    const generateCombination = (
-      current: Record<string, number>,
-      paramIndex: number
-    ) => {
+
+    const generateCombination = (current: Record<string, number>, paramIndex: number) => {
       if (paramIndex === parameters.length) {
-        combinations.push({...current});
+        combinations.push({ ...current });
         return;
       }
-      
+
       const param = parameters[paramIndex];
       const [min, max, step] = ranges[param];
-      
+
       for (let value = min; value <= max; value += step) {
         current[param] = value;
         generateCombination(current, paramIndex + 1);
       }
     };
-    
+
     generateCombination({}, 0);
     return combinations;
   }

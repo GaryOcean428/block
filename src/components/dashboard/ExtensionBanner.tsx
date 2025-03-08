@@ -13,8 +13,8 @@ const ExtensionBanner: React.FC = () => {
             <p className="text-blue-100">Trade from anywhere in your browser</p>
           </div>
         </div>
-        <Link 
-          to="/extension" 
+        <Link
+          to="/extension"
           className="bg-white text-blue-700 hover:bg-blue-50 font-medium py-2 px-4 rounded-md flex items-center"
         >
           Download Now

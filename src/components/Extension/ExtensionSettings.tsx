@@ -17,7 +17,7 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
     notificationsEnabled: true,
     riskLimit: 50,
     apiKey: apiKey,
-    apiSecret: apiSecret
+    apiSecret: apiSecret,
   });
 
   // Check if the extension is installed
@@ -26,18 +26,14 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
       try {
         // Extension ID will need to be updated with your actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-        
-        chrome.runtime.sendMessage(
-          extensionId,
-          { type: 'CHECK_INSTALLATION' },
-          (response) => {
-            if (response && response.installed) {
-              setExtensionStatus('Connected');
-            } else {
-              setExtensionStatus('Not detected');
-            }
+
+        chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
+          if (response && response.installed) {
+            setExtensionStatus('Connected');
+          } else {
+            setExtensionStatus('Not detected');
           }
-        );
+        });
       } catch (error) {
         setExtensionStatus('Not detected');
       }
@@ -48,7 +44,7 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -56,30 +52,35 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: parseInt(value, 10)
+      [name]: parseInt(value, 10),
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Save API credentials
     if (formData.apiKey !== apiKey || formData.apiSecret !== apiSecret) {
       updateSettings({
         apiKey: formData.apiKey,
-        apiSecret: formData.apiSecret
+        apiSecret: formData.apiSecret,
       });
     }
-    
+
     // If we have a chrome extension API and it's installed
-    if (window.chrome && chrome.runtime && chrome.runtime.sendMessage && extensionStatus === 'Connected') {
+    if (
+      window.chrome &&
+      chrome.runtime &&
+      chrome.runtime.sendMessage &&
+      extensionStatus === 'Connected'
+    ) {
       // Extension ID will need to be updated with your actual extension ID
       const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-      
+
       // Update extension settings
       chrome.runtime.sendMessage(
         extensionId,
-        { 
+        {
           type: 'UPDATE_SETTINGS',
           data: {
             extensionEnabled: formData.extensionEnabled,
@@ -87,14 +88,14 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
             poloniexEnabled: formData.poloniexEnabled,
             autoConnect: formData.autoConnect,
             notificationsEnabled: formData.notificationsEnabled,
-            riskLimit: formData.riskLimit
-          }
+            riskLimit: formData.riskLimit,
+          },
         },
-        (response) => {
+        response => {
           console.log('Extension settings updated:', response);
         }
       );
-      
+
       // Update extension API credentials
       chrome.runtime.sendMessage(
         extensionId,
@@ -102,21 +103,21 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
           type: 'UPDATE_CREDENTIALS',
           data: {
             apiKey: formData.apiKey,
-            apiSecret: formData.apiSecret
-          }
+            apiSecret: formData.apiSecret,
+          },
         },
-        (response) => {
+        response => {
           console.log('Extension API credentials updated:', response);
         }
       );
     }
-    
+
     // Close the settings panel if a handler was provided
     if (onClose) {
       onClose();
     }
   };
-  
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-5">
       <div className="flex items-center justify-between mb-5">
@@ -124,15 +125,17 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
           <Shield className="h-5 w-5 mr-2 text-blue-500" />
           Extension Settings
         </h2>
-        <div className={`px-2 py-1 text-xs rounded-full ${
-          extensionStatus === 'Connected' 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-yellow-100 text-yellow-800'
-        }`}>
+        <div
+          className={`px-2 py-1 text-xs rounded-full ${
+            extensionStatus === 'Connected'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-yellow-100 text-yellow-800'
+          }`}
+        >
           {extensionStatus}
         </div>
       </div>
-      
+
       <form onSubmit={handleSubmit}>
         <div className="space-y-5">
           <div className="border-b pb-4">
@@ -140,16 +143,16 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
               <TerminalSquare className="h-4 w-4 mr-2 text-gray-500" />
               Extension Configuration
             </h3>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label htmlFor="extensionEnabled" className="text-sm text-gray-700">
                   Enable Extension
                 </label>
                 <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                  <input 
-                    type="checkbox" 
-                    id="extensionEnabled" 
+                  <input
+                    type="checkbox"
+                    id="extensionEnabled"
                     name="extensionEnabled"
                     checked={formData.extensionEnabled}
                     onChange={handleChange}
@@ -158,15 +161,15 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
                   <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <label htmlFor="tradingViewEnabled" className="text-sm text-gray-700">
                   TradingView Integration
                 </label>
                 <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                  <input 
-                    type="checkbox" 
-                    id="tradingViewEnabled" 
+                  <input
+                    type="checkbox"
+                    id="tradingViewEnabled"
                     name="tradingViewEnabled"
                     checked={formData.tradingViewEnabled}
                     onChange={handleChange}
@@ -176,15 +179,15 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
                   <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <label htmlFor="poloniexEnabled" className="text-sm text-gray-700">
                   Poloniex Integration
                 </label>
                 <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                  <input 
-                    type="checkbox" 
-                    id="poloniexEnabled" 
+                  <input
+                    type="checkbox"
+                    id="poloniexEnabled"
                     name="poloniexEnabled"
                     checked={formData.poloniexEnabled}
                     onChange={handleChange}
@@ -194,15 +197,15 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
                   <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <label htmlFor="autoConnect" className="text-sm text-gray-700">
                   Auto-connect on startup
                 </label>
                 <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                  <input 
-                    type="checkbox" 
-                    id="autoConnect" 
+                  <input
+                    type="checkbox"
+                    id="autoConnect"
                     name="autoConnect"
                     checked={formData.autoConnect}
                     onChange={handleChange}
@@ -212,15 +215,15 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
                   <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <label htmlFor="notificationsEnabled" className="text-sm text-gray-700">
                   Enable Notifications
                 </label>
                 <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                  <input 
-                    type="checkbox" 
-                    id="notificationsEnabled" 
+                  <input
+                    type="checkbox"
+                    id="notificationsEnabled"
                     name="notificationsEnabled"
                     checked={formData.notificationsEnabled}
                     onChange={handleChange}
@@ -232,13 +235,13 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="border-b pb-4">
             <h3 className="font-medium mb-3 flex items-center">
               <Zap className="h-4 w-4 mr-2 text-gray-500" />
               Trading Risk Management
             </h3>
-            
+
             <div>
               <label htmlFor="riskLimit" className="block text-sm text-gray-700 mb-1">
                 Max Position Size (% of Available Balance)
@@ -265,13 +268,13 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
               </p>
             </div>
           </div>
-          
+
           <div>
             <h3 className="font-medium mb-3 flex items-center">
               <Lock className="h-4 w-4 mr-2 text-gray-500" />
               API Credentials
             </h3>
-            
+
             <div className="space-y-3">
               <div>
                 <label htmlFor="apiKey" className="block text-sm text-gray-700 mb-1">
@@ -287,7 +290,7 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="apiSecret" className="block text-sm text-gray-700 mb-1">
                   Poloniex API Secret
@@ -302,14 +305,14 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
-              
+
               <p className="text-xs text-gray-500 mt-1">
-                Your API keys are stored securely and never shared.
-                Create API keys with trading permissions in your Poloniex account.
+                Your API keys are stored securely and never shared. Create API keys with trading
+                permissions in your Poloniex account.
               </p>
             </div>
           </div>
-          
+
           <div className="flex justify-end">
             <button
               type="submit"

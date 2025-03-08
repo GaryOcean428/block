@@ -27,7 +27,7 @@ class AutomatedTradingService {
       maxLeverage: 5,
       riskPerTrade: 2, // Percentage of account balance
       stopLossPercent: 2,
-      takeProfitPercent: 4
+      takeProfitPercent: 4,
     };
 
     // Subscribe to position updates
@@ -48,7 +48,7 @@ class AutomatedTradingService {
    */
   public start(): void {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.updateInterval = setInterval(this.update.bind(this), 5000);
     logger.info('Automated trading started');
@@ -59,7 +59,7 @@ class AutomatedTradingService {
    */
   public stop(): void {
     if (!this.isRunning) return;
-    
+
     this.isRunning = false;
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -98,7 +98,7 @@ class AutomatedTradingService {
     try {
       // Get account balance
       const balance = await poloniexApi.getAccountBalance();
-      
+
       // Check if we can open new positions
       if (this.positions.size >= this.config.maxPositions) {
         return;
@@ -108,10 +108,10 @@ class AutomatedTradingService {
       for (const [id, strategy] of this.activeStrategies) {
         // Get market data
         const marketData = await poloniexApi.getMarketData(strategy.parameters.pair);
-        
+
         // Execute strategy
         const { signal, reason } = executeStrategy(strategy, marketData);
-        
+
         if (signal) {
           await this.executeTrade(strategy, signal, balance.availableAmount);
         }
@@ -131,7 +131,7 @@ class AutomatedTradingService {
   ): Promise<void> {
     try {
       const pair = strategy.parameters.pair;
-      
+
       // Calculate position size based on risk
       const riskAmount = (availableBalance * this.config.riskPerTrade) / 100;
       const marketData = await poloniexApi.getMarketData(pair);
@@ -147,9 +147,10 @@ class AutomatedTradingService {
       );
 
       // Place stop loss
-      const stopPrice = signal === 'BUY'
-        ? lastPrice * (1 - this.config.stopLossPercent / 100)
-        : lastPrice * (1 + this.config.stopLossPercent / 100);
+      const stopPrice =
+        signal === 'BUY'
+          ? lastPrice * (1 - this.config.stopLossPercent / 100)
+          : lastPrice * (1 + this.config.stopLossPercent / 100);
 
       await poloniexApi.placeConditionalOrder(
         pair,
@@ -160,9 +161,10 @@ class AutomatedTradingService {
       );
 
       // Place take profit
-      const takeProfitPrice = signal === 'BUY'
-        ? lastPrice * (1 + this.config.takeProfitPercent / 100)
-        : lastPrice * (1 - this.config.takeProfitPercent / 100);
+      const takeProfitPrice =
+        signal === 'BUY'
+          ? lastPrice * (1 + this.config.takeProfitPercent / 100)
+          : lastPrice * (1 - this.config.takeProfitPercent / 100);
 
       await poloniexApi.placeConditionalOrder(
         pair,
@@ -177,7 +179,7 @@ class AutomatedTradingService {
         pair,
         quantity,
         stopPrice,
-        takeProfitPrice
+        takeProfitPrice,
       });
     } catch (error) {
       logger.error('Error executing trade:', error);

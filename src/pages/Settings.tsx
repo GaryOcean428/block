@@ -1,39 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  User, 
-  Lock, 
-  Bell, 
-  Key, 
-  MessageSquare,
-  Save,
-  AlertTriangle,
-  Check,
-  X
-} from 'lucide-react';
+import { User, Lock, Bell, Key, MessageSquare, Save, AlertTriangle, Check, X } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
-import { usePoloniexData } from '../hooks/usePoloniexData'; 
+import { usePoloniexData } from '../hooks/usePoloniexData';
 
 // Check if we're running in a WebContainer environment
-const IS_WEBCONTAINER = typeof window !== 'undefined' && window.location && window.location.hostname.includes('webcontainer-api.io');
+const IS_WEBCONTAINER =
+  typeof window !== 'undefined' &&
+  window.location &&
+  window.location.hostname.includes('webcontainer-api.io');
 
 const Settings: React.FC = () => {
-  const { 
-    apiKey, 
-    apiSecret, 
-    isLiveTrading, 
-    emailNotifications, 
-    tradeNotifications, 
-    priceAlerts, 
-    chatNotifications, 
+  const {
+    apiKey,
+    apiSecret,
+    isLiveTrading,
+    emailNotifications,
+    tradeNotifications,
+    priceAlerts,
+    chatNotifications,
     showExtension,
     updateSettings,
     resetSettings,
-    hasStoredCredentials
+    hasStoredCredentials,
   } = useSettings();
 
   // Get the data refresh function from our hook
   const { refreshApiConnection, isMockMode } = usePoloniexData();
-  
+
   // Local state for the form
   const [formData, setFormData] = useState({
     apiKey: '',
@@ -43,7 +36,7 @@ const Settings: React.FC = () => {
     tradeNotifications: true,
     priceAlerts: false,
     chatNotifications: true,
-    showExtension: true
+    showExtension: true,
   });
 
   // Save status feedback
@@ -54,7 +47,7 @@ const Settings: React.FC = () => {
   }>({
     show: false,
     success: false,
-    message: ''
+    message: '',
   });
 
   // Initialize form with current settings
@@ -67,16 +60,25 @@ const Settings: React.FC = () => {
       tradeNotifications,
       priceAlerts,
       chatNotifications,
-      showExtension
+      showExtension,
     });
-  }, [apiKey, apiSecret, isLiveTrading, emailNotifications, tradeNotifications, priceAlerts, chatNotifications, showExtension]);
+  }, [
+    apiKey,
+    apiSecret,
+    isLiveTrading,
+    emailNotifications,
+    tradeNotifications,
+    priceAlerts,
+    chatNotifications,
+    showExtension,
+  ]);
 
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -98,7 +100,7 @@ const Settings: React.FC = () => {
       setSaveStatus({
         show: true,
         success: true,
-        message: 'Settings saved successfully'
+        message: 'Settings saved successfully',
       });
 
       // Hide message after 3 seconds
@@ -110,7 +112,7 @@ const Settings: React.FC = () => {
       setSaveStatus({
         show: true,
         success: false,
-        message: 'Error saving settings'
+        message: 'Error saving settings',
       });
     }
   };
@@ -123,32 +125,44 @@ const Settings: React.FC = () => {
           <nav>
             <ul className="space-y-1">
               <li>
-                <a href="#api" className="flex items-center py-2 px-3 rounded-md bg-blue-50 text-blue-700">
+                <a
+                  href="#api"
+                  className="flex items-center py-2 px-3 rounded-md bg-blue-50 text-blue-700"
+                >
                   <Key className="h-5 w-5 mr-3" />
                   API Connection
                 </a>
               </li>
               <li>
-                <a href="#notifications" className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-50">
+                <a
+                  href="#notifications"
+                  className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-50"
+                >
                   <Bell className="h-5 w-5 mr-3" />
                   Notifications
                 </a>
               </li>
               <li>
-                <a href="#extension" className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-50">
+                <a
+                  href="#extension"
+                  className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-50"
+                >
                   <MessageSquare className="h-5 w-5 mr-3" />
                   Extension Settings
                 </a>
               </li>
               <li>
-                <a href="#account" className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-50">
+                <a
+                  href="#account"
+                  className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-50"
+                >
                   <User className="h-5 w-5 mr-3" />
                   Account
                 </a>
               </li>
             </ul>
           </nav>
-          
+
           {hasStoredCredentials && (
             <div className="mt-4 p-3 bg-blue-50 rounded-md text-sm">
               <div className="flex items-center text-blue-700 font-medium mb-1">
@@ -156,19 +170,21 @@ const Settings: React.FC = () => {
                 Credentials Stored
               </div>
               <p className="text-blue-600">
-                {isMockMode 
-                  ? "Using stored credentials in demo mode" 
-                  : "Using stored credentials for live trading"}
+                {isMockMode
+                  ? 'Using stored credentials in demo mode'
+                  : 'Using stored credentials for live trading'}
               </p>
             </div>
           )}
         </div>
       </div>
-      
+
       <div className="md:col-span-2">
         <form onSubmit={handleSaveSettings}>
           {saveStatus.show && (
-            <div className={`mb-4 p-3 rounded-md ${saveStatus.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div
+              className={`mb-4 p-3 rounded-md ${saveStatus.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+            >
               <div className="flex items-center">
                 {saveStatus.success ? (
                   <Check className="h-5 w-5 mr-2" />
@@ -185,22 +201,25 @@ const Settings: React.FC = () => {
               <div className="flex items-center">
                 <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
                 <span className="text-yellow-700">
-                  Running in development environment. Settings will be saved but API connections are simulated.
+                  Running in development environment. Settings will be saved but API connections are
+                  simulated.
                 </span>
               </div>
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div id="api" className="trading-card">
               <div className="flex items-center mb-4">
                 <Key className="h-6 w-6 text-blue-500 mr-2" />
                 <h2 className="text-xl font-bold">API Connection</h2>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">Poloniex API Key</label>
+                  <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
+                    Poloniex API Key
+                  </label>
                   <input
                     type="password"
                     id="apiKey"
@@ -211,9 +230,11 @@ const Settings: React.FC = () => {
                     placeholder="Enter your API key"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="apiSecret" className="block text-sm font-medium text-gray-700">API Secret</label>
+                  <label htmlFor="apiSecret" className="block text-sm font-medium text-gray-700">
+                    API Secret
+                  </label>
                   <input
                     type="password"
                     id="apiSecret"
@@ -224,10 +245,11 @@ const Settings: React.FC = () => {
                     placeholder="Enter your API secret"
                   />
                   <p className="mt-1 text-sm text-gray-500">
-                    Your API keys are stored securely in your browser's local storage and never shared.
+                    Your API keys are stored securely in your browser's local storage and never
+                    shared.
                   </p>
                 </div>
-                
+
                 <div className="flex items-center">
                   <input
                     id="isLiveTrading"
@@ -246,18 +268,20 @@ const Settings: React.FC = () => {
                 </p>
               </div>
             </div>
-            
+
             <div id="notifications" className="trading-card">
               <div className="flex items-center mb-4">
                 <Bell className="h-6 w-6 text-blue-500 mr-2" />
                 <h2 className="text-xl font-bold">Notifications</h2>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Email Notifications</h3>
-                    <p className="text-sm text-gray-500">Receive important account updates via email</p>
+                    <p className="text-sm text-gray-500">
+                      Receive important account updates via email
+                    </p>
                   </div>
                   <div className="ml-4">
                     <input
@@ -270,7 +294,7 @@ const Settings: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Trade Notifications</h3>
@@ -287,11 +311,13 @@ const Settings: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Price Alerts</h3>
-                    <p className="text-sm text-gray-500">Receive alerts when prices reach set thresholds</p>
+                    <p className="text-sm text-gray-500">
+                      Receive alerts when prices reach set thresholds
+                    </p>
                   </div>
                   <div className="ml-4">
                     <input
@@ -306,18 +332,20 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div id="extension" className="trading-card">
               <div className="flex items-center mb-4">
                 <MessageSquare className="h-6 w-6 text-blue-500 mr-2" />
                 <h2 className="text-xl font-bold">Extension Settings</h2>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Show Extension Icon</h3>
-                    <p className="text-sm text-gray-500">Display the extension icon in your browser</p>
+                    <p className="text-sm text-gray-500">
+                      Display the extension icon in your browser
+                    </p>
                   </div>
                   <div className="ml-4">
                     <input
@@ -330,11 +358,13 @@ const Settings: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Chat Notifications</h3>
-                    <p className="text-sm text-gray-500">Receive notifications for new chat messages</p>
+                    <p className="text-sm text-gray-500">
+                      Receive notifications for new chat messages
+                    </p>
                   </div>
                   <div className="ml-4">
                     <input
@@ -349,7 +379,7 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-between">
               <button
                 type="button"
@@ -359,11 +389,8 @@ const Settings: React.FC = () => {
                 <X className="h-4 w-4 mr-2" />
                 Reset Settings
               </button>
-              
-              <button
-                type="submit"
-                className="btn btn-primary flex items-center"
-              >
+
+              <button type="submit" className="btn btn-primary flex items-center">
                 <Save className="h-4 w-4 mr-2" />
                 Save Settings
               </button>

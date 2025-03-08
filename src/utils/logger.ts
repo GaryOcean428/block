@@ -34,19 +34,19 @@ class Logger {
       timestamp: new Date().toISOString(),
       level,
       message,
-      data
+      data,
     };
   }
 
   private addLog(entry: LogEntry): void {
     // Add the log to our in-memory store
     this.logs.push(entry);
-    
+
     // Trim logs if they exceed the maximum
     if (this.logs.length > this.maxLogs) {
       this.logs = this.logs.slice(-this.maxLogs);
     }
-    
+
     // In a real application, you might want to send logs to a server or service
     if (activeLevels.includes(entry.level)) {
       const { timestamp, level, message, data } = entry;

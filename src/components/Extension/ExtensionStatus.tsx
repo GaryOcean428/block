@@ -6,60 +6,58 @@ interface ExtensionStatusProps {
 }
 
 const ExtensionStatus: React.FC<ExtensionStatusProps> = ({ onRefreshRequest }) => {
-  const [extensionStatus, setExtensionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
-  const [tradingViewStatus, setTradingViewStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
-  const [poloniexStatus, setPoloniexStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
+  const [extensionStatus, setExtensionStatus] = useState<'connected' | 'disconnected' | 'checking'>(
+    'checking'
+  );
+  const [tradingViewStatus, setTradingViewStatus] = useState<
+    'connected' | 'disconnected' | 'checking'
+  >('checking');
+  const [poloniexStatus, setPoloniexStatus] = useState<'connected' | 'disconnected' | 'checking'>(
+    'checking'
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // Check extension connection status
   useEffect(() => {
     checkExtensionStatus();
   }, []);
-  
+
   const checkExtensionStatus = () => {
     setExtensionStatus('checking');
     setTradingViewStatus('checking');
     setPoloniexStatus('checking');
     setIsRefreshing(true);
-    
+
     // Check if extension is installed
     if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
       try {
         // Extension ID will need to be updated with your actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-        
-        chrome.runtime.sendMessage(
-          extensionId,
-          { type: 'CHECK_INSTALLATION' },
-          (response) => {
-            if (response && response.installed) {
-              setExtensionStatus('connected');
-              
-              // Now check TradingView and Poloniex connection status
-              chrome.runtime.sendMessage(
-                extensionId,
-                { type: 'CHECK_TRADINGVIEW_STATUS' },
-                (response) => {
-                  setTradingViewStatus(response && response.connected ? 'connected' : 'disconnected');
-                }
-              );
-              
-              chrome.runtime.sendMessage(
-                extensionId,
-                { type: 'CHECK_POLONIEX_STATUS' },
-                (response) => {
-                  setPoloniexStatus(response && response.connected ? 'connected' : 'disconnected');
-                  setIsRefreshing(false);
-                }
-              );
-            } else {
-              setExtensionStatus('disconnected');
-              setTradingViewStatus('disconnected');
-              setPoloniexStatus('disconnected');
+
+        chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
+          if (response && response.installed) {
+            setExtensionStatus('connected');
+
+            // Now check TradingView and Poloniex connection status
+            chrome.runtime.sendMessage(
+              extensionId,
+              { type: 'CHECK_TRADINGVIEW_STATUS' },
+              response => {
+                setTradingViewStatus(response && response.connected ? 'connected' : 'disconnected');
+              }
+            );
+
+            chrome.runtime.sendMessage(extensionId, { type: 'CHECK_POLONIEX_STATUS' }, response => {
+              setPoloniexStatus(response && response.connected ? 'connected' : 'disconnected');
               setIsRefreshing(false);
-            }
+            });
+          } else {
+            setExtensionStatus('disconnected');
+            setTradingViewStatus('disconnected');
+            setPoloniexStatus('disconnected');
+            setIsRefreshing(false);
           }
-        );
+        });
       } catch (error) {
         console.error('Error checking extension status:', error);
         setExtensionStatus('disconnected');
@@ -75,14 +73,14 @@ const ExtensionStatus: React.FC<ExtensionStatusProps> = ({ onRefreshRequest }) =
       setIsRefreshing(false);
     }
   };
-  
+
   const handleRefresh = () => {
     checkExtensionStatus();
     if (onRefreshRequest) {
       onRefreshRequest();
     }
   };
-  
+
   return (
     <div className="bg-white rounded-lg shadow p-4">
       <div className="flex items-center justify-between mb-3">
@@ -90,7 +88,7 @@ const ExtensionStatus: React.FC<ExtensionStatusProps> = ({ onRefreshRequest }) =
           <MonitorSmartphone className="h-5 w-5 mr-2 text-blue-500" />
           Extension Status
         </h3>
-        <button 
+        <button
           onClick={handleRefresh}
           disabled={isRefreshing}
           className="p-1.5 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600 disabled:opacity-50"
@@ -98,7 +96,7 @@ const ExtensionStatus: React.FC<ExtensionStatusProps> = ({ onRefreshRequest }) =
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
       </div>
-      
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -107,39 +105,67 @@ const ExtensionStatus: React.FC<ExtensionStatusProps> = ({ onRefreshRequest }) =
           </div>
           <StatusBadge status={extensionStatus} />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <svg className="h-4 w-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5L19 12L12 19M5 19L12 12L5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              className="h-4 w-4 mr-2 text-blue-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 5L19 12L12 19M5 19L12 12L5 5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <span className="text-gray-700">TradingView</span>
           </div>
           <StatusBadge status={tradingViewStatus} />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <svg className="h-4 w-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-              <path d="M12 6V18M18 12H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <svg
+              className="h-4 w-4 mr-2 text-blue-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+              <path
+                d="M12 6V18M18 12H6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
             <span className="text-gray-700">Poloniex</span>
           </div>
           <StatusBadge status={poloniexStatus} />
         </div>
       </div>
-      
+
       <div className="mt-4 text-sm">
         {extensionStatus === 'disconnected' ? (
           <div className="text-yellow-700 flex items-start">
             <AlertTriangle className="h-4 w-4 mr-1 mt-0.5 flex-shrink-0" />
-            <span>Extension not detected. Please install the Chrome extension to enable integration features.</span>
+            <span>
+              Extension not detected. Please install the Chrome extension to enable integration
+              features.
+            </span>
           </div>
-        ) : extensionStatus === 'connected' && (tradingViewStatus === 'disconnected' || poloniexStatus === 'disconnected') ? (
+        ) : extensionStatus === 'connected' &&
+          (tradingViewStatus === 'disconnected' || poloniexStatus === 'disconnected') ? (
           <div className="text-yellow-700 flex items-start">
             <AlertTriangle className="h-4 w-4 mr-1 mt-0.5 flex-shrink-0" />
-            <span>Some integrations are not connected. Please visit TradingView or Poloniex to activate them.</span>
+            <span>
+              Some integrations are not connected. Please visit TradingView or Poloniex to activate
+              them.
+            </span>
           </div>
         ) : extensionStatus === 'connected' ? (
           <div className="text-green-700 flex items-start">
