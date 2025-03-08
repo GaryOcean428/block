@@ -1,7 +1,7 @@
 /**
  * Poloniex Trading Platform Chrome Extension
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // DOM elements - check for existence before using
   const pairSelect = document.getElementById('pair-select');
   const buyBtn = document.getElementById('buy-btn');
@@ -29,11 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Mock username
   const username = 'user_' + Math.floor(Math.random() * 1000);
-  
+
   // Send chat message function - defined before being used
   function sendMessage() {
     if (!messageInput || !chatMessages) return;
-    
+
     const message = messageInput.value.trim();
     if (message) {
       addMessageToChat(username, message);
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to add messages to chat
   function addMessageToChat(username, text) {
     if (!chatMessages) return;
-    
+
     const messageElement = document.createElement('div');
     messageElement.className = 'message';
     messageElement.innerHTML = `
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
     notification.style.borderRadius = '4px';
     notification.style.zIndex = '1000';
     document.body.appendChild(notification);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
       if (notification.parentNode) {

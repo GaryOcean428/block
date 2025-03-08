@@ -51,7 +51,7 @@ class PoloniexExtension {
    */
   private init(): void {
     // Get base URL from current tab or default to localhost
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       if (tabs[0]?.url) {
         try {
           const url = new URL(tabs[0].url);
@@ -117,7 +117,7 @@ class PoloniexExtension {
    */
   private handleOpenApp(): void {
     // If we're on Poloniex, just focus the tab
-    chrome.tabs.query({ url: '*://*.poloniex.com/*' }, (tabs) => {
+    chrome.tabs.query({ url: '*://*.poloniex.com/*' }, tabs => {
       if (tabs.length > 0) {
         chrome.tabs.update(tabs[0].id!, { active: true });
       } else {
@@ -132,11 +132,11 @@ class PoloniexExtension {
    */
   private handleOpenSettings(): void {
     const popup = document.querySelector('.extension-container') as HTMLElement;
-    
+
     if (popup) {
       // Save current content
       const originalContent = popup.innerHTML;
-      
+
       // Load settings UI
       popup.innerHTML = `
         <div class="settings-container">
@@ -161,11 +161,11 @@ class PoloniexExtension {
           </div>
         </div>
       `;
-      
+
       // Add event listeners for settings buttons
       const saveBtn = document.getElementById('save-settings');
       const cancelBtn = document.getElementById('cancel-settings');
-      
+
       if (saveBtn) {
         saveBtn.addEventListener('click', () => {
           // Save settings logic would go here
@@ -174,7 +174,7 @@ class PoloniexExtension {
           this.initializeEventListeners(); // Re-initialize event listeners
         });
       }
-      
+
       if (cancelBtn) {
         cancelBtn.addEventListener('click', () => {
           popup.innerHTML = originalContent;
@@ -190,7 +190,7 @@ class PoloniexExtension {
   private handleTrade(action: 'buy' | 'sell'): void {
     const { pairSelect } = this.elements;
     const pair = pairSelect ? pairSelect.value : 'BTC-USDT';
-    
+
     // In a real scenario, this would interact with the trading API
     // For now, just show a notification
     this.showNotification(`${action.toUpperCase()} order placed for ${pair}`);
@@ -201,9 +201,9 @@ class PoloniexExtension {
    */
   private sendMessage(): void {
     const { messageInput, chatMessages } = this.elements;
-    
+
     if (!messageInput || !chatMessages) return;
-    
+
     const message = messageInput.value.trim();
     if (message) {
       this.addMessageToChat(this.username, message);
@@ -216,9 +216,9 @@ class PoloniexExtension {
    */
   private addMessageToChat(username: string, text: string): void {
     const { chatMessages } = this.elements;
-    
+
     if (!chatMessages) return;
-    
+
     const messageElement = document.createElement('div');
     messageElement.className = 'message';
     messageElement.innerHTML = `
@@ -227,12 +227,12 @@ class PoloniexExtension {
     `;
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     // Store the message
     this.messages.push({
       username,
       text,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -253,7 +253,7 @@ class PoloniexExtension {
     notification.style.borderRadius = '4px';
     notification.style.zIndex = '1000';
     document.body.appendChild(notification);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
       if (notification.parentNode) {
@@ -267,7 +267,7 @@ class PoloniexExtension {
    */
   private initializeMockData(): void {
     const { chatMessages } = this.elements;
-    
+
     // Only add if chat exists
     if (chatMessages) {
       setTimeout(() => {

@@ -30,19 +30,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error to an error reporting service
     console.error('Error caught by boundary:', error, errorInfo);
-    
+
     // Call onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-    
+
     // Store error info in state for rendering
     this.setState({ errorInfo });
-    
+
     // Example of logging to an error service
     this.logErrorToService(error, errorInfo);
   }
-  
+
   private logErrorToService(error: Error, errorInfo: React.ErrorInfo): void {
     // Here you would normally send this to your error tracking service
     // For example, Sentry, LogRocket, etc.
@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       componentStack: errorInfo.componentStack,
       timestamp: new Date().toISOString(),
     };
-    
+
     // Store in local storage for debugging until we have a proper service
     try {
       const errors = JSON.parse(localStorage.getItem('error_logs') || '[]');
@@ -80,12 +80,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       // Default fallback UI
       return (
         <div className="error-boundary-container p-6 mx-auto my-8 max-w-2xl bg-red-50 border border-red-200 rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">
-            Something went wrong
-          </h2>
+          <h2 className="text-xl font-semibold text-red-600 mb-4">Something went wrong</h2>
           <div className="mb-4 text-gray-700">
             <p>
-              The application encountered an unexpected error. Try refreshing the page or contact support if the problem persists.
+              The application encountered an unexpected error. Try refreshing the page or contact
+              support if the problem persists.
             </p>
           </div>
           <details className="mt-4 mb-4">
@@ -95,9 +94,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <pre className="mt-2 p-4 bg-gray-900 text-gray-100 rounded overflow-auto text-xs whitespace-pre-wrap">
               {this.state.error.toString()}
               {this.state.errorInfo && (
-                <div className="mt-2">
-                  {this.state.errorInfo.componentStack}
-                </div>
+                <div className="mt-2">{this.state.errorInfo.componentStack}</div>
               )}
             </pre>
           </details>
@@ -124,14 +121,14 @@ export function withErrorBoundary<P extends object>(
   errorBoundaryProps: Omit<ErrorBoundaryProps, 'children'> = {}
 ): React.ComponentType<P> {
   const displayName = Component.displayName || Component.name || 'Component';
-  
+
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
       <Component {...props} />
     </ErrorBoundary>
   );
-  
+
   WrappedComponent.displayName = `withErrorBoundary(${displayName})`;
-  
+
   return WrappedComponent;
 }

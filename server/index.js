@@ -24,15 +24,32 @@ const io = new Server(server, {
   },
 });
 
+// Add health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Connect to Poloniex WebSocket for live market data
 const connectToPoloniexWebSocket = () => {
   console.log('Connecting to Poloniex WebSocket...');
 
-  // Create WebSocket connection to Poloniex
+  // Create WebSocket connection to Poloniex (with reconnection logic)
   const poloniexWs = new WebSocket('wss://ws.poloniex.com/ws/public');
+
+  // Set a timeout to handle connection issues
+  const connectionTimeout = setTimeout(() => {
+    if (poloniexWs.readyState !== WebSocket.OPEN) {
+      console.log('WebSocket connection timeout, reconnecting...');
+      poloniexWs.terminate();
+      // Try to reconnect in 5 seconds
+      setTimeout(connectToPoloniexWebSocket, 5000);
+    }
+  }, 10000); // 10 second timeout
 
   poloniexWs.on('open', () => {
     console.log('Connected to Poloniex WebSocket');
+    // Clear the connection timeout
+    clearTimeout(connectionTimeout);
 
     // Subscribe to market data channels
     poloniexWs.send(
@@ -131,13 +148,8 @@ io.on('connection', socket => {
 // Start Poloniex WebSocket connection
 const poloniexWs = connectToPoloniexWebSocket();
 
-// Define API routes
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'up', timestamp: new Date() });
-});
-
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8765;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

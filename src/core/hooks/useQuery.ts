@@ -2,13 +2,13 @@
  * Custom React Query hook for data fetching
  * Combines React Query with our fetch client for a unified API
  */
-import { 
-  useQuery as useReactQuery, 
+import {
+  useQuery as useReactQuery,
   useMutation as useReactMutation,
   useQueryClient,
-  QueryKey, 
+  QueryKey,
   UseQueryOptions,
-  UseMutationOptions
+  UseMutationOptions,
 } from '@tanstack/react-query';
 import { http, FetchOptions } from '@core/utils/fetchClient';
 import { getErrorMessage } from '@core/utils/errors';
@@ -24,7 +24,7 @@ export function useQuery<TData = unknown, TError = unknown>(
   }
 ) {
   const { queryOptions, ...fetchOptions } = options || {};
-  
+
   return useReactQuery<TData, TError>({
     queryKey,
     queryFn: async () => {
@@ -53,9 +53,9 @@ export function useMutation<TData = unknown, TVariables = unknown, TError = unkn
 ) {
   const queryClient = useQueryClient();
   const { mutationOptions, fetchOptions, invalidateQueries } = options || {};
-  
+
   return useReactMutation<TData, TError, TVariables>({
-    mutationFn: async (variables) => {
+    mutationFn: async variables => {
       try {
         if (method === 'delete') {
           return await http.delete<TData>(url, {
@@ -63,7 +63,7 @@ export function useMutation<TData = unknown, TVariables = unknown, TError = unkn
             params: variables as any,
           });
         }
-        
+
         return await http[method]<TData>(url, variables, fetchOptions);
       } catch (error) {
         console.error(`Mutation error for ${method.toUpperCase()} ${url}:`, error);
@@ -74,12 +74,10 @@ export function useMutation<TData = unknown, TVariables = unknown, TError = unkn
       // Invalidate affected queries when successful
       if (invalidateQueries?.length) {
         await Promise.all(
-          invalidateQueries.map(queryKey => 
-            queryClient.invalidateQueries({ queryKey })
-          )
+          invalidateQueries.map(queryKey => queryClient.invalidateQueries({ queryKey }))
         );
       }
-      
+
       // Call user-provided onSuccess
       mutationOptions?.onSuccess?.(data, variables, context);
     },
@@ -99,7 +97,7 @@ export function useInfiniteQuery<TData = unknown, TError = unknown>(
   }
 ) {
   const { queryOptions, initialPageParam = 0, ...fetchOptions } = options || {};
-  
+
   return useReactQuery<TData, TError>({
     queryKey,
     queryFn: async ({ pageParam = initialPageParam }) => {
@@ -120,6 +118,6 @@ export function useQueryErrorHandler() {
       // You could integrate this with a toast notification system
       console.error('Query error:', errorMessage);
       return errorMessage;
-    }
+    },
   };
 }

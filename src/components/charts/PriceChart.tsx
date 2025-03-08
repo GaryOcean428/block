@@ -12,10 +12,13 @@ import {
   TimeScale,
   Filler,
   ChartOptions,
+  BarController,
+  LineController,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { MarketData } from '../../types';
 
+// Register all required components and controllers
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -23,6 +26,8 @@ ChartJS.register(
   BarElement,
   Filler,
   LineElement,
+  BarController,
+  LineController,
   Title,
   Tooltip,
   Legend,

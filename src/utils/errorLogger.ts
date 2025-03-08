@@ -1,6 +1,6 @@
 /**
  * Error Logger Service
- * 
+ *
  * Centralized error logging service to track and report application errors.
  * Supports multiple environments and can be configured to use different error tracking services.
  */
@@ -73,7 +73,7 @@ export class ErrorLogger {
 
     // Log to console in all environments for debugging
     console.error(`[${level.toUpperCase()}] Error captured:`, error);
-    
+
     if (context) {
       console.error('Error context:', context);
     }
@@ -87,7 +87,11 @@ export class ErrorLogger {
   /**
    * Log a message with a specific level
    */
-  static log(message: string, level: ErrorLogOptions['level'] = 'info', options?: Omit<ErrorLogOptions, 'level'>): void {
+  static log(
+    message: string,
+    level: ErrorLogOptions['level'] = 'info',
+    options?: Omit<ErrorLogOptions, 'level'>
+  ): void {
     if (!ErrorLogger.instance) {
       ErrorLogger.init();
     }
@@ -96,7 +100,11 @@ export class ErrorLogger {
     console.log(`[${level.toUpperCase()}] ${message}`);
 
     // In production, we would send to error tracking service
-    if (level !== 'debug' && level !== 'info' && ErrorLogger.instance.environment === 'production') {
+    if (
+      level !== 'debug' &&
+      level !== 'info' &&
+      ErrorLogger.instance.environment === 'production'
+    ) {
       // Example: Sentry.captureMessage(message, { level, extra: options });
     }
   }

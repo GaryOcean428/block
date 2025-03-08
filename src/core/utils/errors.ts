@@ -15,34 +15,38 @@ export class AppError extends Error {
 // API-specific error with status code
 export class ApiError extends AppError {
   statusCode: number;
-  
-  constructor(statusCode: number, message: string, public data?: unknown) {
+
+  constructor(
+    statusCode: number,
+    message: string,
+    public data?: unknown
+  ) {
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
     Object.setPrototypeOf(this, ApiError.prototype);
   }
-  
+
   static isBadRequest(error: unknown): error is ApiError {
     return error instanceof ApiError && error.statusCode === 400;
   }
-  
+
   static isUnauthorized(error: unknown): error is ApiError {
     return error instanceof ApiError && error.statusCode === 401;
   }
-  
+
   static isForbidden(error: unknown): error is ApiError {
     return error instanceof ApiError && error.statusCode === 403;
   }
-  
+
   static isNotFound(error: unknown): error is ApiError {
     return error instanceof ApiError && error.statusCode === 404;
   }
-  
+
   static isRateLimit(error: unknown): error is ApiError {
     return error instanceof ApiError && error.statusCode === 429;
   }
-  
+
   static isServerError(error: unknown): error is ApiError {
     return error instanceof ApiError && error.statusCode >= 500;
   }
@@ -77,7 +81,10 @@ export class RateLimitError extends AppError {
 
 // Validation errors
 export class ValidationError extends AppError {
-  constructor(message: string, public field?: string) {
+  constructor(
+    message: string,
+    public field?: string
+  ) {
     super(message);
     this.name = 'ValidationError';
     Object.setPrototypeOf(this, ValidationError.prototype);
@@ -101,7 +108,7 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  
+
   return String(error || 'An unknown error occurred');
 }
 
@@ -119,7 +126,7 @@ export function serializeError(error: unknown): Record<string, unknown> {
       ...(error instanceof ValidationError ? { field: error.field } : {}),
     };
   }
-  
+
   return { message: String(error || 'Unknown error') };
 }
 

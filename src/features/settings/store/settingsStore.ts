@@ -14,16 +14,16 @@ export type ChartTimeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '1w';
 interface SettingsState {
   // Theme
   theme: ThemeMode;
-  
+
   // Chart preferences
   chartStyle: ChartStyle;
   chartTimeframe: ChartTimeframe;
-  
+
   // Display preferences
   showTradingStats: boolean;
   showPortfolioBalance: boolean;
   showPnL: boolean;
-  
+
   // Notification settings
   enableNotifications: boolean;
   notificationTypes: {
@@ -32,16 +32,16 @@ interface SettingsState {
     priceAlerts: boolean;
     news: boolean;
   };
-  
+
   // Trading preferences
   defaultLeverage: number;
   confirmOrders: boolean;
   showLiquidationWarnings: boolean;
-  
+
   // API keys (encrypted in localStorage)
   apiKey: string;
   apiSecret: string;
-  
+
   // Accessibility settings
   fontSize: 'small' | 'medium' | 'large';
   highContrastMode: boolean;
@@ -51,16 +51,30 @@ interface SettingsState {
   setTheme: (theme: ThemeMode) => void;
   setChartStyle: (style: ChartStyle) => void;
   setChartTimeframe: (timeframe: ChartTimeframe) => void;
-  toggleSetting: (key: keyof Omit<SettingsState, 'setTheme' | 'setChartStyle' | 'setChartTimeframe' | 'toggleSetting' | 'updateNotificationSettings' | 'setApiCredentials' | 'setAccessibilityOption'>) => void;
+  toggleSetting: (
+    key: keyof Omit<
+      SettingsState,
+      | 'setTheme'
+      | 'setChartStyle'
+      | 'setChartTimeframe'
+      | 'toggleSetting'
+      | 'updateNotificationSettings'
+      | 'setApiCredentials'
+      | 'setAccessibilityOption'
+    >
+  ) => void;
   updateNotificationSettings: (settings: Partial<SettingsState['notificationTypes']>) => void;
   setApiCredentials: (apiKey: string, apiSecret: string) => void;
-  setAccessibilityOption: <K extends 'fontSize' | 'highContrastMode' | 'reduceAnimations'>(option: K, value: SettingsState[K]) => void;
+  setAccessibilityOption: <K extends 'fontSize' | 'highContrastMode' | 'reduceAnimations'>(
+    option: K,
+    value: SettingsState[K]
+  ) => void;
 }
 
 // Create settings store with persistence
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    immer((set) => ({
+    immer(set => ({
       // Initial state
       theme: 'system',
       chartStyle: 'candles',
@@ -83,53 +97,60 @@ export const useSettingsStore = create<SettingsState>()(
       fontSize: 'medium',
       highContrastMode: false,
       reduceAnimations: false,
-      
+
       // Theme action
-      setTheme: (theme) => set((state) => {
-        state.theme = theme;
-      }),
-      
+      setTheme: theme =>
+        set(state => {
+          state.theme = theme;
+        }),
+
       // Chart style action
-      setChartStyle: (style) => set((state) => {
-        state.chartStyle = style;
-      }),
-      
+      setChartStyle: style =>
+        set(state => {
+          state.chartStyle = style;
+        }),
+
       // Chart timeframe action
-      setChartTimeframe: (timeframe) => set((state) => {
-        state.chartTimeframe = timeframe;
-      }),
-      
+      setChartTimeframe: timeframe =>
+        set(state => {
+          state.chartTimeframe = timeframe;
+        }),
+
       // Toggle boolean settings
-      toggleSetting: (key) => set((state) => {
-        // Check if the key exists and is a boolean before toggling
-        if (typeof state[key] === 'boolean') {
-          (state[key] as boolean) = !(state[key] as boolean);
-        }
-      }),
-      
+      toggleSetting: key =>
+        set(state => {
+          // Check if the key exists and is a boolean before toggling
+          if (typeof state[key] === 'boolean') {
+            (state[key] as boolean) = !(state[key] as boolean);
+          }
+        }),
+
       // Update notification settings
-      updateNotificationSettings: (settings) => set((state) => {
-        state.notificationTypes = {
-          ...state.notificationTypes,
-          ...settings,
-        };
-      }),
-      
+      updateNotificationSettings: settings =>
+        set(state => {
+          state.notificationTypes = {
+            ...state.notificationTypes,
+            ...settings,
+          };
+        }),
+
       // Set API credentials
-      setApiCredentials: (apiKey, apiSecret) => set((state) => {
-        state.apiKey = apiKey;
-        state.apiSecret = apiSecret;
-      }),
-      
+      setApiCredentials: (apiKey, apiSecret) =>
+        set(state => {
+          state.apiKey = apiKey;
+          state.apiSecret = apiSecret;
+        }),
+
       // Set accessibility options
-      setAccessibilityOption: (option, value) => set((state) => {
-        state[option] = value;
-      }),
+      setAccessibilityOption: (option, value) =>
+        set(state => {
+          state[option] = value;
+        }),
     })),
     {
       name: STORAGE_KEYS.USER_PREFERENCES,
       // Only store non-sensitive settings
-      partialize: (state) => ({
+      partialize: state => ({
         theme: state.theme,
         chartStyle: state.chartStyle,
         chartTimeframe: state.chartTimeframe,

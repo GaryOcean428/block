@@ -53,13 +53,29 @@ MIN_REACT_VERSION="react@^19.0.0"
 MIN_REACT_DOM_VERSION="react-dom@^19.0.0"
 MIN_NODE_VERSION="20.11.1"  # LTS version for stability
 MIN_TYPESCRIPT_VERSION="5.3.3"
-MIN_PNPM_VERSION="10.2.1"
-MIN_YARN_VERSION="4.7.0"
 MIN_VITE_VERSION="4.4.7"
 
-## Other Rules
+## Package Managers
 
-/home/braden/Desktop/Dev/crm13/.github/copilot-instructions.md forms part of these rules.
+- either of the following package managers is required before running npm commands:
+
+- MIN_PNPM_VERSION="10.2.1"
+- MIN_YARN_VERSION="4.7.0"
+
+- Check lock file for existing package managerprior to executing commands. if not lock file exists, ask the user for their preference.
+
+## Coding pattern preferences
+
+- Always prefer simple solutions
+- Avoid duplication of code whenever possible, which means checking for other areas of the codebase that might already have similar code and functionality
+- Write code that takes into account the different environments: dev, test, and prod You are careful to only make changes that are requested or you are confident are well understood and related to the change being requested
+- When fixing an issue or bug, do not introduce a new pattern or technology without first exhausting all options for the existing implementation. And i1f you finally do this, make sure to remove the old implementation afterwards so we don't have duplicate logic.
+- Keep the codebase very clean and organized Avoid writing scripts in files if possible, especially 1f the script is likely only to be run once
+- Avold having files over 200
+-300 lines of code. Refactor at that point.
+- Mocking data is only needed for tests, never mock data for dev or prod
+- Never add stubbing or fake data patterns to code that affects the dev or prod environments
+- Never overwrite my .env files without first asking and confirming
 
 ## Database Dependencies
 

@@ -1,6 +1,6 @@
 /**
  * Error Boundary Component
- * 
+ *
  * A React error boundary component that catches JavaScript errors anywhere in the child
  * component tree, logs those errors, and displays a fallback UI instead of crashing the app.
  * Enhanced with TypeScript and compatible with React 19.
@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     super(props);
     this.state = {
       hasError: false,
-      error: null
+      error: null,
     };
   }
 
@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return {
       hasError: true,
-      error
+      error,
     };
   }
 
@@ -49,10 +49,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
    */
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Log to our error tracking service
     ErrorLogger.captureException(error, {
-      context: errorInfo.componentStack
+      context: errorInfo.componentStack,
     });
   }
 
@@ -62,7 +62,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   resetErrorBoundary = (): void => {
     this.setState({
       hasError: false,
-      error: null
+      error: null,
     });
   };
 
@@ -87,16 +87,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </p>
             </div>
             <div className="error-boundary-actions">
-              <button 
-                onClick={this.resetErrorBoundary}
-                className="error-boundary-button"
-              >
+              <button onClick={this.resetErrorBoundary} className="error-boundary-button">
                 Try Again
               </button>
-              <button 
-                onClick={() => window.location.reload()}
-                className="error-boundary-button"
-              >
+              <button onClick={() => window.location.reload()} className="error-boundary-button">
                 Refresh Page
               </button>
             </div>

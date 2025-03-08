@@ -3,7 +3,7 @@
  * Configures the testing environment and adds helpful utilities
  */
 import '@testing-library/jest-dom';
-import { expect, afterEach } from 'vitest';
+import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
@@ -30,18 +30,20 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock IntersectionObserver
+/**
+ * Mock IntersectionObserver
+ */
 class MockIntersectionObserver {
   readonly root: Element | null = null;
   readonly rootMargin: string = '';
   readonly thresholds: ReadonlyArray<number> = [];
-  
+
   constructor() {
     this.observe = vi.fn();
     this.unobserve = vi.fn();
     this.disconnect = vi.fn();
   }
-  
+
   observe = vi.fn();
   unobserve = vi.fn();
   disconnect = vi.fn();

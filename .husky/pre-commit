@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 
-yarn lint-staged
+# Run lint-staged directly with npx
+npx lint-staged

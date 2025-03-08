@@ -8,18 +8,18 @@ export const API = {
   // Poloniex API Endpoints
   FUTURES_BASE_URL: 'https://futures-api.poloniex.com/v3',
   SPOT_BASE_URL: 'https://api.poloniex.com/v3',
-  
+
   // WebSocket Endpoints
   FUTURES_WS_URL: 'wss://futures-ws.poloniex.com/ws/public',
   FUTURES_PRIVATE_WS_URL: 'wss://futures-ws.poloniex.com/ws/private',
-  
+
   // Rate Limiting Configuration
   RATE_LIMITS: {
     PUBLIC_REQUESTS_PER_SECOND: 10,
     PRIVATE_REQUESTS_PER_SECOND: 5,
-    ORDERS_PER_SECOND: 2
+    ORDERS_PER_SECOND: 2,
   },
-  
+
   // Request Timeout Configurations
   TIMEOUT_MS: 5000,
   LONG_TIMEOUT_MS: 10000,

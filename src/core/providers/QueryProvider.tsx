@@ -3,11 +3,7 @@
  * Sets up global query client for efficient API data fetching and caching
  */
 import { ReactNode } from 'react';
-import { 
-  QueryClient, 
-  QueryClientProvider, 
-  DefaultOptions 
-} from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, DefaultOptions } from '@tanstack/react-query';
 
 interface QueryProviderProps {
   children: ReactNode;
@@ -30,11 +26,7 @@ const queryClient = new QueryClient({
 });
 
 export function QueryProvider({ children }: QueryProviderProps) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
 // Export the client for direct usage
