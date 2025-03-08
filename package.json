@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server/index.js",
-    "prepare": "husky",
+    "postinstall": "husky",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
