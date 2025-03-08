@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Bell, Key, MessageSquare, Save, AlertTriangle, Check, X } from 'lucide-react';
+import {
+  User,
+  Lock,
+  Bell,
+  Key,
+  MessageSquare,
+  Save,
+  AlertTriangle,
+  Check,
+  X,
+  LogIn,
+  LogOut,
+} from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { usePoloniexData } from '../hooks/usePoloniexData';
+import { AuthModal } from '../components/Auth';
+import { signOut } from '../services/auth';
 
 // Check if we're running in a WebContainer environment
 const IS_WEBCONTAINER =
@@ -22,10 +36,15 @@ const Settings: React.FC = () => {
     updateSettings,
     resetSettings,
     hasStoredCredentials,
+    isAuthenticated,
+    userId,
   } = useSettings();
 
   // Get the data refresh function from our hook
   const { refreshApiConnection, isMockMode } = usePoloniexData();
+
+  // State for authentication modal
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Local state for the form
   const [formData, setFormData] = useState({
@@ -82,16 +101,42 @@ const Settings: React.FC = () => {
     }));
   };
 
+  // Handle user sign out
+  const handleSignOut = async () => {
+    await signOut();
+    // No need to manually update auth state as the Settings context listens for auth changes
+    setSaveStatus({
+      show: true,
+      success: true,
+      message: 'Signed out successfully',
+    });
+
+    // Hide message after 3 seconds
+    setTimeout(() => {
+      setSaveStatus(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
+
   // Handle form submission
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Clear previous status
     setSaveStatus({ show: false, success: false, message: '' });
 
     try {
-      // Update settings in context
-      updateSettings(formData);
+      // If trying to save API keys and not authenticated, prompt for login
+      if (
+        (formData.apiKey || formData.apiSecret) &&
+        !isAuthenticated &&
+        (formData.apiKey !== apiKey || formData.apiSecret !== apiSecret)
+      ) {
+        setIsAuthModalOpen(true);
+        return;
+      }
+
+      // Update settings in context (which handles secure storage in Supabase)
+      await updateSettings(formData);
 
       // Refresh API connection with new credentials
       refreshApiConnection();
@@ -112,7 +157,7 @@ const Settings: React.FC = () => {
       setSaveStatus({
         show: true,
         success: false,
-        message: 'Error saving settings',
+        message: error instanceof Error ? error.message : 'Error saving settings',
       });
     }
   };
@@ -176,6 +221,28 @@ const Settings: React.FC = () => {
               </p>
             </div>
           )}
+
+          {isAuthenticated ? (
+            <div className="mt-4">
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center py-2 px-3 rounded-md text-red-600 bg-red-50 hover:bg-red-100"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="w-full flex items-center justify-center py-2 px-3 rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -215,6 +282,18 @@ const Settings: React.FC = () => {
                 <h2 className="text-xl font-bold">API Connection</h2>
               </div>
 
+              {!isAuthenticated && (
+                <div className="mb-4 p-3 rounded-md bg-blue-50 border-l-4 border-blue-400">
+                  <div className="flex items-center">
+                    <Lock className="h-5 w-5 mr-2 text-blue-500" />
+                    <span className="text-blue-700">
+                      Sign in to securely store your API keys. Your keys will be encrypted and only
+                      accessible by you.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
@@ -245,8 +324,9 @@ const Settings: React.FC = () => {
                     placeholder="Enter your API secret"
                   />
                   <p className="mt-1 text-sm text-gray-500">
-                    Your API keys are stored securely in your browser's local storage and never
-                    shared.
+                    {isAuthenticated
+                      ? 'Your API keys are encrypted and stored securely in our database. Only you can access them.'
+                      : 'Sign in to securely store your API keys. Without an account, keys are only stored locally.'}
                   </p>
                 </div>
 
@@ -363,7 +443,7 @@ const Settings: React.FC = () => {
                   <div>
                     <h3 className="font-medium">Chat Notifications</h3>
                     <p className="text-sm text-gray-500">
-                      Receive notifications for new chat messages
+                      Get notified of new messages in the trading chat
                     </p>
                   </div>
                   <div className="ml-4">
@@ -380,24 +460,71 @@ const Settings: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-between">
-              <button
-                type="button"
-                onClick={resetSettings}
-                className="btn btn-secondary flex items-center"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Reset Settings
-              </button>
+            <div id="account" className="trading-card">
+              <div className="flex items-center mb-4">
+                <User className="h-6 w-6 text-blue-500 mr-2" />
+                <h2 className="text-xl font-bold">Account</h2>
+              </div>
 
-              <button type="submit" className="btn btn-primary flex items-center">
-                <Save className="h-4 w-4 mr-2" />
+              {isAuthenticated ? (
+                <div className="mb-4 space-y-2">
+                  <p className="text-sm text-gray-600">
+                    Signed in as: <span className="font-medium">{userId}</span>
+                  </p>
+                  <div className="p-3 bg-blue-50 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      Your API keys are securely encrypted and stored in our database.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-600">
+                    Create an account to securely store your API keys and settings.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm 
+                              font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In / Create Account
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={resetSettings}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 
+                            shadow-sm text-sm font-medium rounded-md text-gray-700 
+                            bg-white hover:bg-gray-50"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Reset All Settings
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="inline-flex items-center px-6 py-3 border border-transparent 
+                          text-base font-medium rounded-md shadow-sm text-white 
+                          bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="h-5 w-5 mr-2" />
                 Save Settings
               </button>
             </div>
           </div>
         </form>
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

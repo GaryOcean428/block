@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getStorageItem, setStorageItem, STORAGE_KEYS, isStorageAvailable } from '../utils/storage';
+import { supabase } from '../services/supabase';
+import { getCurrentUser } from '../services/auth';
+import { getUserApiKeys, saveUserApiKeys, deleteUserApiKeys } from '../services/supabase';
 
 interface SettingsContextType {
   apiKey: string;
@@ -15,6 +18,8 @@ interface SettingsContextType {
   updateSettings: (settings: Partial<SettingsState>) => void;
   resetSettings: () => void;
   hasStoredCredentials: boolean;
+  isAuthenticated: boolean;
+  userId: string | null;
 }
 
 interface SettingsState {
@@ -53,22 +58,24 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Check if we can access localStorage
   const canUseStorage = isStorageAvailable();
 
+  // Add authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
   // Get initial settings from localStorage or environment variables
   const getInitialSettings = (): SettingsState => {
     if (!canUseStorage) {
       return {
         ...defaultSettings,
-        apiKey: import.meta.env.VITE_POLONIEX_API_KEY || '',
-        apiSecret: import.meta.env.VITE_POLONIEX_API_SECRET || '',
+        apiKey: '',
+        apiSecret: '',
       };
     }
 
     return {
-      apiKey: getStorageItem(STORAGE_KEYS.API_KEY, import.meta.env.VITE_POLONIEX_API_KEY || ''),
-      apiSecret: getStorageItem(
-        STORAGE_KEYS.API_SECRET,
-        import.meta.env.VITE_POLONIEX_API_SECRET || ''
-      ),
+      // Non-sensitive settings stored in localStorage is fine
+      apiKey: '',
+      apiSecret: '',
       isLiveTrading: getStorageItem(STORAGE_KEYS.IS_LIVE_TRADING, false),
       darkMode: getStorageItem(STORAGE_KEYS.DARK_MODE, false),
       defaultPair: getStorageItem(STORAGE_KEYS.DEFAULT_PAIR, 'BTC-USDT'),
@@ -83,13 +90,82 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [settings, setSettings] = useState<SettingsState>(getInitialSettings);
   const [hasStoredCredentials, setHasStoredCredentials] = useState<boolean>(false);
 
+  // Check for authenticated user on load
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const { user } = await getCurrentUser();
+      if (user) {
+        setIsAuthenticated(true);
+        setUserId(user.id);
+
+        // Load user's API keys from Supabase
+        const apiKeys = await getUserApiKeys(user.id);
+        if (apiKeys) {
+          setSettings(prev => ({
+            ...prev,
+            apiKey: apiKeys.api_key || '',
+            apiSecret: apiKeys.api_secret || '',
+          }));
+          setHasStoredCredentials(Boolean(apiKeys.api_key && apiKeys.api_secret));
+        }
+      }
+    };
+
+    checkAuthStatus();
+
+    // Set up auth state change listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setIsAuthenticated(true);
+        setUserId(session.user.id);
+
+        // Load user API keys when they sign in
+        const apiKeys = await getUserApiKeys(session.user.id);
+        if (apiKeys) {
+          setSettings(prev => ({
+            ...prev,
+            apiKey: apiKeys.api_key || '',
+            apiSecret: apiKeys.api_secret || '',
+          }));
+          setHasStoredCredentials(Boolean(apiKeys.api_key && apiKeys.api_secret));
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUserId(null);
+
+        // Clear API keys on sign out
+        setSettings(prev => ({
+          ...prev,
+          apiKey: '',
+          apiSecret: '',
+        }));
+        setHasStoredCredentials(false);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
   // Check if we have credentials stored
   useEffect(() => {
     setHasStoredCredentials(Boolean(settings.apiKey && settings.apiSecret));
   }, [settings.apiKey, settings.apiSecret]);
 
-  // Update settings in state and localStorage
-  const updateSettings = (newSettings: Partial<SettingsState>) => {
+  // Update settings in state and persistence
+  const updateSettings = async (newSettings: Partial<SettingsState>) => {
+    // Special handling for API keys - store them in Supabase if authenticated
+    if ((newSettings.apiKey !== undefined || newSettings.apiSecret !== undefined) && userId) {
+      const updatedApiKey = newSettings.apiKey !== undefined ? newSettings.apiKey : settings.apiKey;
+      const updatedApiSecret =
+        newSettings.apiSecret !== undefined ? newSettings.apiSecret : settings.apiSecret;
+
+      await saveUserApiKeys(userId, updatedApiKey, updatedApiSecret);
+    }
+
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
 
@@ -102,10 +178,15 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         }
       }
 
-      // Only persist to localStorage if it's available
+      // Only persist non-sensitive settings to localStorage if it's available
       if (canUseStorage) {
+        // We don't store API keys in localStorage
+        const safeSettings = { ...newSettings };
+        delete safeSettings.apiKey;
+        delete safeSettings.apiSecret;
+
         // Persist each updated setting to localStorage
-        Object.entries(newSettings).forEach(([key, value]) => {
+        Object.entries(safeSettings).forEach(([key, value]) => {
           const storageKey = STORAGE_KEYS[key.toUpperCase()] || `poloniex_${key}`;
           setStorageItem(storageKey, value);
         });
@@ -116,8 +197,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   };
 
   // Reset all settings to default
-  const resetSettings = () => {
+  const resetSettings = async () => {
     setSettings(defaultSettings);
+
+    // Delete API keys from Supabase if authenticated
+    if (userId) {
+      await deleteUserApiKeys(userId);
+    }
 
     if (canUseStorage) {
       Object.values(STORAGE_KEYS).forEach(key => {
@@ -133,6 +219,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         updateSettings,
         resetSettings,
         hasStoredCredentials,
+        isAuthenticated,
+        userId,
       }}
     >
       {children}
