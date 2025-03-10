@@ -307,6 +307,7 @@ const Settings: React.FC = () => {
                     onChange={handleChange}
                     className="mt-1 block w-full input"
                     placeholder="Enter your API key"
+                    autoComplete="off"
                   />
                 </div>
 
@@ -322,6 +323,7 @@ const Settings: React.FC = () => {
                     onChange={handleChange}
                     className="mt-1 block w-full input"
                     placeholder="Enter your API secret"
+                    autoComplete="off"
                   />
                   <p className="mt-1 text-sm text-gray-500">
                     {isAuthenticated

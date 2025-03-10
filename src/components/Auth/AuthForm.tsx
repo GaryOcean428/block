@@ -58,6 +58,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, authMode: initialAuthMod
         setMessage('Password reset instructions sent to your email.');
       }
     } catch (err) {
+      console.error('Authentication error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -98,6 +99,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, authMode: initialAuthMod
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
+            autoComplete="email"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md 
               focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 
               dark:text-white transition duration-150"
@@ -118,6 +120,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, authMode: initialAuthMod
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              autoComplete={authMode === 'signin' ? 'current-password' : 'new-password'}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md 
                 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 
                 dark:text-white transition duration-150"
@@ -139,6 +142,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, authMode: initialAuthMod
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md 
                 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-neutral-700 
                 dark:text-white transition duration-150"
