@@ -1,13 +1,16 @@
+import { Info, RefreshCw, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { X, RefreshCw, Info } from 'lucide-react';
-import ExtensionStatus from './ExtensionStatus';
+import { useSettings } from '../../context/SettingsContext';
 import ExtensionSettings from './ExtensionSettings';
+import ExtensionStatus from './ExtensionStatus';
 
 interface ExtensionControlsProps {
   onClose?: () => void;
 }
 
 const ExtensionControls: React.FC<ExtensionControlsProps> = ({ onClose }) => {
+  // We're importing useSettings for potential future use but not using it currently
+  useSettings();
   const [activePanel, setActivePanel] = useState<'status' | 'settings' | 'info'>('status');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -15,7 +18,7 @@ const ExtensionControls: React.FC<ExtensionControlsProps> = ({ onClose }) => {
     setIsRefreshing(true);
 
     // Refresh data from extension
-    if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
       try {
         // Extension ID will need to be updated with your actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';

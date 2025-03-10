@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Clock,
   CreditCard,
@@ -13,8 +13,7 @@ import {
   DollarSign,
   BarChart4,
 } from 'lucide-react';
-import { useTradingContext } from '../context/TradingContext';
-import { useSettings } from '../context/SettingsContext';
+import { useTradingContext } from '../hooks/useTradingContext';
 import MockModeNotice from '../components/MockModeNotice';
 import { poloniexApi } from '../services/poloniexAPI';
 import TransactionHistory from '../components/account/TransactionHistory';
@@ -22,8 +21,7 @@ import ApiKeyManagement from '../components/account/ApiKeyManagement';
 import { mockTransactions } from '../data/mockData';
 
 const Account: React.FC = () => {
-  const { accountBalance, isLoading, isMockMode, refreshApiConnection } = useTradingContext();
-  const { apiKey, apiSecret } = useSettings();
+  const { accountBalance, isMockMode, refreshApiConnection } = useTradingContext();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'api' | 'settings'>(
     'overview'
   );

@@ -11,12 +11,12 @@ import {
   Legend,
   TimeScale,
   Filler,
-  ChartOptions,
   BarController,
   LineController,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import { MarketData } from '../../types';
+import type { ChartOptions, ChartData, ChartDataset } from 'chart.js';
+import { Chart } from 'react-chartjs-2';
+import type { MarketData } from '../../types';
 
 // Register all required components and controllers
 ChartJS.register(
@@ -37,8 +37,6 @@ ChartJS.register(
 interface PriceChartProps {
   data: MarketData[];
   pair: string;
-  type?: 'line' | 'candlestick';
-  timeframe?: '1h' | '4h' | '1d';
 }
 
 const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
@@ -49,26 +47,29 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
     return date.toLocaleTimeString();
   });
 
-  const chartData = {
+  // Create specific typed datasets for mixed chart
+  const priceDataset: ChartDataset<'line', number[]> = {
+    label: `${pair} Price`,
+    data: filteredData.map(item => item.close),
+    fill: true,
+    borderColor: 'rgb(59, 130, 246)',
+    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+    tension: 0.2,
+  };
+
+  const volumeDataset: ChartDataset<'bar', number[]> = {
+    label: 'Volume',
+    data: filteredData.map(item => item.volume),
+    type: 'bar',
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+    yAxisID: 'volume',
+  };
+
+  // Create properly typed chart data
+  const chartData: ChartData<'line', number[]> = {
     labels,
-    datasets: [
-      {
-        label: `${pair} Price`,
-        data: filteredData.map(item => item.close),
-        fill: true,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        tension: 0.2,
-      },
-      {
-        label: 'Volume',
-        data: filteredData.map(item => item.volume),
-        type: 'bar',
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        borderColor: 'rgba(59, 130, 246, 0.2)',
-        yAxisID: 'volume',
-      },
-    ],
+    datasets: [priceDataset, volumeDataset as unknown as ChartDataset<'line', number[]>],
   };
 
   const options: ChartOptions<'line'> = {
@@ -85,12 +86,14 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
           label: function (context) {
             const dataIndex = context.dataIndex;
             const dataPoint = filteredData[dataIndex];
-            return [
-              `Price: $${dataPoint.close.toFixed(2)}`,
-              `High: $${dataPoint.high.toFixed(2)}`,
-              `Low: $${dataPoint.low.toFixed(2)}`,
-              `Volume: ${dataPoint.volume.toFixed(2)}`,
-            ];
+            return dataPoint
+              ? [
+                  `Price: $${dataPoint.close.toFixed(2)}`,
+                  `High: $${dataPoint.high.toFixed(2)}`,
+                  `Low: $${dataPoint.low.toFixed(2)}`,
+                  `Volume: ${dataPoint.volume.toFixed(2)}`,
+                ]
+              : [];
           },
         },
       },
@@ -112,7 +115,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, pair }) => {
     },
   };
 
-  return <Line options={options} data={chartData} height={80} />;
+  return <Chart type="line" options={options} data={chartData} height={80} />;
 };
 
 export default PriceChart;

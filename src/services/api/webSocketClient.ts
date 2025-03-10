@@ -5,14 +5,8 @@
  * using WebSockets for low-latency communication.
  */
 import { ENV_CONFIG } from '@/utils/environment';
-import {
-  WebSocketMessageType,
-  WebSocketSubscription,
-  TimeInterval,
-  OrderStatus,
-  OrderSide,
-  MarketSummary,
-} from './types';
+import { WebSocketMessageType, TimeInterval } from './types';
+import type { WebSocketSubscription, MarketSummary, Trade, Candle, Order, Balance } from './types';
 
 /**
  * WebSocket connection states
@@ -33,11 +27,11 @@ export interface WebSocketEventHandlers {
   onClose?: (code: number, reason: string) => void;
   onError?: (error: Event) => void;
   onMarketData?: (data: MarketSummary) => void;
-  onTrade?: (data: any) => void;
-  onCandle?: (data: any) => void;
-  onOrderUpdate?: (data: any) => void;
-  onBalanceUpdate?: (data: any) => void;
-  onMessage?: (message: any) => void; // Generic message handler
+  onTrade?: (data: Trade) => void;
+  onCandle?: (data: Candle) => void;
+  onOrderUpdate?: (data: Order) => void;
+  onBalanceUpdate?: (data: Balance) => void;
+  onMessage?: (message: unknown) => void; // Generic message handler
 }
 
 /**
@@ -202,7 +196,7 @@ export class PoloniexWebSocketClient {
   public unsubscribe(type: WebSocketMessageType, symbols?: string[]): void {
     const unsubscription: WebSocketSubscription = {
       type: WebSocketMessageType.UNSUBSCRIBE,
-      symbols,
+      symbols: symbols ? [...symbols] : undefined,
     };
 
     this.send(unsubscription);
@@ -235,7 +229,7 @@ export class PoloniexWebSocketClient {
   /**
    * Send a message to the WebSocket server
    */
-  private send(data: any): boolean {
+  private send(data: unknown): boolean {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       console.warn('Cannot send message: WebSocket is not open');
       return false;
@@ -333,31 +327,31 @@ export class PoloniexWebSocketClient {
       if (message.type) {
         switch (message.type) {
           case WebSocketMessageType.MARKET_DATA:
-            if (this.handlers.onMarketData) {
+            if (this.handlers.onMarketData && message.data) {
               this.handlers.onMarketData(message.data);
             }
             break;
 
           case WebSocketMessageType.TRADES:
-            if (this.handlers.onTrade) {
+            if (this.handlers.onTrade && message.data) {
               this.handlers.onTrade(message.data);
             }
             break;
 
           case WebSocketMessageType.CANDLES:
-            if (this.handlers.onCandle) {
+            if (this.handlers.onCandle && message.data) {
               this.handlers.onCandle(message.data);
             }
             break;
 
           case WebSocketMessageType.ORDER_UPDATE:
-            if (this.handlers.onOrderUpdate) {
+            if (this.handlers.onOrderUpdate && message.data) {
               this.handlers.onOrderUpdate(message.data);
             }
             break;
 
           case WebSocketMessageType.BALANCE_UPDATE:
-            if (this.handlers.onBalanceUpdate) {
+            if (this.handlers.onBalanceUpdate && message.data) {
               this.handlers.onBalanceUpdate(message.data);
             }
             break;

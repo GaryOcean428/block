@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // In Tailwind CSS v3, we extend the color palette
+        // Using modern neutral color palette naming
         neutral: {
           50: '#fafafa',
           100: '#f5f5f5',
@@ -31,6 +31,19 @@ export default {
           900: '#1e3a8a',
           950: '#172554',
         },
+        green: {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#22c55e',
+          600: '#16a34a',
+          700: '#15803d',
+          800: '#166534',
+          900: '#14532d',
+          950: '#052e16',
+        },
         red: {
           50: '#fef2f2',
           100: '#fee2e2',
@@ -48,4 +61,7 @@ export default {
     },
   },
   plugins: [],
+  corePlugins: {
+    preflight: true,
+  },
 };

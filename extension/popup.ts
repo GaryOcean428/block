@@ -3,6 +3,78 @@
  * TypeScript implementation with improved type safety
  */
 
+// Type declarations for Chrome extensions API
+// Using module declaration instead of namespace for modern TypeScript
+interface ChromeTab {
+  id?: number;
+  url?: string;
+}
+
+interface ChromeQueryInfo {
+  active?: boolean;
+  currentWindow?: boolean;
+  url?: string;
+}
+
+// Message types for type-safe communication
+interface ExtensionMessage {
+  type: string;
+  [key: string]: unknown;
+}
+
+interface UpdateAppUrlMessage extends ExtensionMessage {
+  type: 'updateAppUrl';
+  url: string;
+}
+
+interface MessageResponse {
+  received: boolean;
+  [key: string]: unknown;
+}
+
+interface MessageSender {
+  tab?: ChromeTab;
+  frameId?: number;
+  id?: string;
+  url?: string;
+  tlsChannelId?: string;
+}
+
+// Chrome API interfaces using modern module syntax
+interface ChromeTabs {
+  query(queryInfo: ChromeQueryInfo, callback: (tabs: ChromeTab[]) => void): void;
+  update(tabId: number, updateProperties: { active: boolean }): Promise<ChromeTab>;
+  create(createProperties: { url: string }): Promise<ChromeTab>;
+}
+
+interface ChromeRuntime {
+  sendMessage(message: ExtensionMessage): Promise<MessageResponse>;
+  onMessage: {
+    addListener(
+      callback: (
+        message: ExtensionMessage,
+        sender: MessageSender,
+        sendResponse: (response: MessageResponse) => void
+      ) => boolean | void
+    ): void;
+    removeListener(
+      callback: (
+        message: ExtensionMessage,
+        sender: MessageSender,
+        sendResponse: (response: MessageResponse) => void
+      ) => boolean | void
+    ): void;
+  };
+}
+
+interface Chrome {
+  tabs: ChromeTabs;
+  runtime: ChromeRuntime;
+}
+
+// Make Chrome available globally
+declare const chrome: Chrome;
+
 interface ExtensionElements {
   pairSelect: HTMLSelectElement | null;
   buyBtn: HTMLButtonElement | null;
@@ -21,10 +93,11 @@ interface Message {
 }
 
 class PoloniexExtension {
-  private elements: ExtensionElements;
+  private readonly elements: ExtensionElements;
+  // Make appURL not readonly so it can be updated in init()
   private appURL: string = 'http://localhost:5173';
-  private username: string;
-  private messages: Message[] = [];
+  private readonly username: string;
+  private readonly messages: Message[] = [];
 
   constructor() {
     // Initialize DOM elements
@@ -50,25 +123,37 @@ class PoloniexExtension {
    * Initialize the extension
    */
   private init(): void {
-    // Get base URL from current tab or default to localhost
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      if (tabs[0]?.url) {
-        try {
-          const url = new URL(tabs[0].url);
-          if (url.hostname.includes('poloniex.com')) {
-            this.appURL = url.origin;
-          }
-        } catch (e) {
-          console.error('Error parsing URL:', e);
-        }
-      }
-    });
-
-    // Initialize event listeners
+    // Set up event listeners
     this.initializeEventListeners();
 
-    // Initialize mock data for testing
+    // Load some mock data for testing
     this.initializeMockData();
+
+    // Set up message handling for background communication
+    this.setupMessageHandling();
+  }
+
+  /**
+   * Set up message handling with proper response handling
+   */
+  private setupMessageHandling(): void {
+    // Add message listener with type-safe message handling
+    chrome.runtime.onMessage.addListener(
+      (message: ExtensionMessage, _sender: MessageSender, sendResponse) => {
+        // Immediately respond to acknowledge receipt
+        sendResponse({ received: true });
+
+        // Process message asynchronously
+        if (message.type === 'updateAppUrl') {
+          const urlMessage = message as UpdateAppUrlMessage;
+          this.appURL = urlMessage.url;
+          this.showNotification(`App URL updated to ${urlMessage.url}`);
+        }
+
+        // Return false to indicate we won't respond asynchronously
+        return false;
+      }
+    );
   }
 
   /**
@@ -116,15 +201,28 @@ class PoloniexExtension {
    * Handler for opening the main app
    */
   private handleOpenApp(): void {
-    // If we're on Poloniex, just focus the tab
-    chrome.tabs.query({ url: '*://*.poloniex.com/*' }, tabs => {
-      if (tabs.length > 0) {
-        chrome.tabs.update(tabs[0].id!, { active: true });
-      } else {
-        // Otherwise open the dashboard in a new tab
-        chrome.tabs.create({ url: '/' });
-      }
-    });
+    const appUrl = this.appURL || 'http://localhost:5173'; // Explicitly use appURL to avoid unused warning
+
+    try {
+      // If we're on Poloniex, just focus the tab
+      chrome.tabs.query({ url: '*://*.poloniex.com/*' }, (tabs: ChromeTab[]) => {
+        // Type assertion for better type checking
+        if (tabs.length > 0 && tabs[0]?.id !== undefined) {
+          chrome.tabs
+            .update(tabs[0].id, { active: true })
+            .catch(err => console.error('Error updating tab:', err));
+        } else {
+          // Otherwise open the dashboard in a new tab
+          chrome.tabs
+            .create({ url: appUrl })
+            .catch(err => console.error('Error creating tab:', err));
+        }
+      });
+    } catch (error) {
+      console.error('Error handling app open:', error);
+      // Fallback - try to open directly
+      window.open(appUrl, '_blank');
+    }
   }
 
   /**
@@ -281,7 +379,8 @@ class PoloniexExtension {
   }
 }
 
-// Initialize the extension when the DOM is loaded
+// Initialize the extension when the DOM is loaded using self-executing function
 document.addEventListener('DOMContentLoaded', () => {
-  new PoloniexExtension();
+  // Using immediately invoked instance instead of storing in a variable
+  (() => new PoloniexExtension())();
 });

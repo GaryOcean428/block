@@ -9,7 +9,7 @@ import { ROUTES } from '@config/constants';
 import './App.css';
 import { TradingProvider } from './context/TradingContext';
 import { SettingsProvider } from './context/SettingsContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContextProvider';
 
 // Use lazy loading for route components
 const Dashboard = lazy(() => import('./pages/Dashboard'));

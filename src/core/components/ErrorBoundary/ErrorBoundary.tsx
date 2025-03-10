@@ -5,7 +5,8 @@
  * component tree, logs those errors, and displays a fallback UI instead of crashing the app.
  * Enhanced with TypeScript and compatible with React 19.
  */
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { ErrorLogger } from '@utils/errorLogger';
 
 interface ErrorBoundaryProps {
@@ -52,7 +53,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     // Log to our error tracking service
     ErrorLogger.captureException(error, {
-      context: errorInfo.componentStack,
+      context: errorInfo.componentStack ? errorInfo.componentStack : {},
     });
   }
 
@@ -83,7 +84,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <div className="error-boundary-header">
               <h2>Something went wrong</h2>
               <p className="error-boundary-message">
-                {error?.message || 'An unexpected error occurred'}
+                {error?.message ?? 'An unexpected error occurred'}
               </p>
             </div>
             <div className="error-boundary-actions">

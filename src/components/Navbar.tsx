@@ -1,5 +1,5 @@
+import { Bell, Menu, User } from 'lucide-react';
 import React, { useState } from 'react';
-import { Bell, User, Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
 

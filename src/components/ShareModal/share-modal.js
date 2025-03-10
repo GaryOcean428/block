@@ -3,15 +3,31 @@
  * This script initializes the share functionality for the trading platform
  */
 
-// Safely initialize share functionality
+// Defer execution until DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Get the share modal elements
-  const shareButton = document.querySelector('#share-button');
-  const shareModal = document.querySelector('#share-modal');
+  // Wait for the React app to render completely
+  setTimeout(initializeShareModal, 1000);
+});
 
-  // Only attach listeners if elements exist
-  if (shareButton && shareModal) {
-    shareButton.addEventListener('click', () => {
+// Function to initialize share modal
+function initializeShareModal() {
+  try {
+    // Get the share modal elements
+    const shareButton = document.querySelector('#share-button');
+    const shareModal = document.querySelector('#share-modal');
+
+    if (!shareButton || !shareModal) {
+      console.warn('Share modal elements not found in DOM. Will retry later.');
+      // Retry after a delay if elements aren't found
+      setTimeout(initializeShareModal, 1000);
+      return;
+    }
+
+    console.log('Share modal elements found, initializing event listeners');
+
+    // Add click event to share button
+    shareButton.addEventListener('click', e => {
+      e.preventDefault();
       shareModal.classList.remove('hidden');
     });
 
@@ -38,5 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
           });
       });
     }
+
+    console.log('Share modal initialization complete');
+  } catch (error) {
+    console.error('Error initializing share modal:', error);
   }
-});
+}

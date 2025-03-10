@@ -8,7 +8,7 @@ interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 // Configure log levels that should be output
@@ -17,8 +17,8 @@ const activeLevels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
 
 class Logger {
   private static instance: Logger;
-  private logs: LogEntry[] = [];
-  private maxLogs = 1000; // Maximum number of logs to keep in memory
+  private logs: LogEntry[] = []; // Remove readonly to allow modification
+  private readonly maxLogs = 1000; // Maximum number of logs to keep in memory
 
   private constructor() {}
 
@@ -29,7 +29,7 @@ class Logger {
     return Logger.instance;
   }
 
-  private createLogEntry(level: LogLevel, message: string, data?: any): LogEntry {
+  private createLogEntry(level: LogLevel, message: string, data?: unknown): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -50,26 +50,37 @@ class Logger {
     // In a real application, you might want to send logs to a server or service
     if (activeLevels.includes(entry.level)) {
       const { timestamp, level, message, data } = entry;
-      console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](
+
+      // Determine the console method to use based on log level
+      let consoleMethod: 'log' | 'warn' | 'error';
+      if (level === 'error') {
+        consoleMethod = 'error';
+      } else if (level === 'warn') {
+        consoleMethod = 'warn';
+      } else {
+        consoleMethod = 'log';
+      }
+
+      console[consoleMethod](
         `[${level.toUpperCase()}] ${timestamp} - ${message}`,
-        data ? data : ''
+        data ?? '' // Use nullish coalescing instead of conditional
       );
     }
   }
 
-  public debug(message: string, data?: any): void {
+  public debug(message: string, data?: unknown): void {
     this.addLog(this.createLogEntry('debug', message, data));
   }
 
-  public info(message: string, data?: any): void {
+  public info(message: string, data?: unknown): void {
     this.addLog(this.createLogEntry('info', message, data));
   }
 
-  public warn(message: string, data?: any): void {
+  public warn(message: string, data?: unknown): void {
     this.addLog(this.createLogEntry('warn', message, data));
   }
 
-  public error(message: string, data?: any): void {
+  public error(message: string, data?: unknown): void {
     this.addLog(this.createLogEntry('error', message, data));
   }
 

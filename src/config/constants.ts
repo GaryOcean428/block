@@ -33,6 +33,8 @@ export const ENV = {
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
   POLONIEX_API_KEY: import.meta.env.VITE_POLONIEX_API_KEY,
   POLONIEX_API_SECRET: import.meta.env.VITE_POLONIEX_API_SECRET,
+  MOCK_MODE: import.meta.env.VITE_MOCK_MODE === 'true',
+  APP_NAME: import.meta.env.VITE_APP_NAME || 'Block Trading Platform',
 };
 
 // Application Routes

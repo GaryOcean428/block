@@ -28,7 +28,7 @@ interface ErrorLogOptions {
 export class ErrorLogger {
   private static instance: ErrorLogger;
   private isInitialized = false;
-  private environment = getEnvironment();
+  private readonly environment = getEnvironment();
 
   /**
    * Initialize the error logging service
@@ -69,7 +69,7 @@ export class ErrorLogger {
       ErrorLogger.init();
     }
 
-    const { context, user, tags, level = 'error' } = options || {};
+    const { context, level = 'error' } = options || {};
 
     // Log to console in all environments for debugging
     console.error(`[${level.toUpperCase()}] Error captured:`, error);
@@ -80,18 +80,14 @@ export class ErrorLogger {
 
     // In production, we would send to error tracking service
     if (ErrorLogger.instance.environment === 'production') {
-      // Example: Sentry.captureException(error, { extra: { context, user, tags } });
+      // Example: Sentry.captureException(error, { extra: { context } });
     }
   }
 
   /**
    * Log a message with a specific level
    */
-  static log(
-    message: string,
-    level: ErrorLogOptions['level'] = 'info',
-    options?: Omit<ErrorLogOptions, 'level'>
-  ): void {
+  static log(message: string, level: ErrorLogOptions['level'] = 'info'): void {
     if (!ErrorLogger.instance) {
       ErrorLogger.init();
     }
@@ -100,12 +96,8 @@ export class ErrorLogger {
     console.log(`[${level.toUpperCase()}] ${message}`);
 
     // In production, we would send to error tracking service
-    if (
-      level !== 'debug' &&
-      level !== 'info' &&
-      ErrorLogger.instance.environment === 'production'
-    ) {
-      // Example: Sentry.captureMessage(message, { level, extra: options });
+    if (ErrorLogger.instance.environment === 'production') {
+      // Example: Sentry.captureMessage(message, level);
     }
   }
 

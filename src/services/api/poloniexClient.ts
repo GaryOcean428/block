@@ -4,10 +4,11 @@
  * A type-safe client for interacting with the Poloniex API.
  * Implements comprehensive error handling, retries, and authentication.
  */
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 import CryptoJS from 'crypto-js';
 import { ENV_CONFIG } from '@/utils/environment';
-import {
+import type {
   ApiResponse,
   Market,
   MarketSummary,
@@ -74,8 +75,8 @@ export class PoloniexApiError extends Error {
  * Poloniex API Client implementation
  */
 export class PoloniexClient {
-  private axios: AxiosInstance;
-  private config: Required<PoloniexClientConfig>;
+  private readonly axios: AxiosInstance;
+  private readonly config: Required<PoloniexClientConfig>;
 
   /**
    * Creates a new Poloniex API client instance
@@ -137,10 +138,11 @@ export class PoloniexClient {
     config: AxiosRequestConfig = {}
   ): Promise<ApiResponse<T>> {
     let retries = 0;
+    const maxRetries = this.config.maxRetries;
+    const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-    while (true) {
+    while (retries <= maxRetries) {
       try {
-        const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         const requestConfig: AxiosRequestConfig = {
           ...config,
           method,
@@ -152,13 +154,13 @@ export class PoloniexClient {
         const response = await this.axios.request<ApiResponse<T>>(requestConfig);
         return response.data;
       } catch (error) {
-        if (
+        const isRetryableError =
           error instanceof AxiosError &&
-          retries < this.config.maxRetries &&
           (error.code === 'ECONNABORTED' || // Timeout
             error.message.includes('Network Error') || // Network error
-            [408, 429, 500, 502, 503, 504].includes(error.response?.status || 0)) // Retryable status codes
-        ) {
+            [408, 429, 500, 502, 503, 504].includes(error.response?.status ?? 0)); // Retryable status
+
+        if (isRetryableError && retries < maxRetries) {
           retries++;
           // Exponential backoff with jitter
           const delay = Math.min(1000 * 2 ** retries, 10000) + Math.random() * 1000;
@@ -173,6 +175,10 @@ export class PoloniexClient {
         throw error;
       }
     }
+
+    // This line should never be reached due to the while loop condition,
+    // but TypeScript requires a return statement
+    throw new Error('Maximum retry attempts exceeded');
   }
 
   // Public API endpoints

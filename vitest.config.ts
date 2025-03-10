@@ -1,13 +1,17 @@
-import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { defineConfig } from 'vitest/config';
+
+// Disable TypeScript checking for this specific line due to
+// compatibility issues between different versions of Vite in the project
 
 export default defineConfig({
+  // @ts-expect-error - Incompatible Vite plugin types between different versions
   plugins: [react()],
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/setupTests.ts'],
+    setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

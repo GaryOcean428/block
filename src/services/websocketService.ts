@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import { MarketData, Trade } from '../types';
+import type { MarketData, Trade } from '../types';
+import { ENV } from '../config/constants';
 
 // Socket.io events
 const EVENTS = {
@@ -24,13 +25,13 @@ class WebSocketService {
   private static instance: WebSocketService;
   private socket: Socket | null = null;
   private connected: boolean = false;
-  private eventListeners: Map<string, Set<Function>> = new Map();
+  private readonly eventListeners: Map<string, Set<(data: unknown) => void>> = new Map();
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
-  private reconnectDelay: number = 1000;
-  private offlineData: Map<string, any> = new Map();
+  private readonly maxReconnectAttempts: number = 5;
+  private readonly reconnectDelay: number = 1000;
+  private offlineData: Map<string, unknown> = new Map();
   private connectionAttempted: boolean = false;
-  private useMockData: boolean = true; // Default to mock data
+  private useMockData: boolean = ENV.MOCK_MODE; // Use the environment variable
 
   // In a real application, this would be your WebSocket server URL
   private readonly SOCKET_URL = 'http://localhost:3000';
@@ -75,8 +76,7 @@ class WebSocketService {
         // WebSocket connections outside the container domain aren't possible
         if (
           typeof window !== 'undefined' &&
-          window.location &&
-          window.location.hostname.includes('webcontainer-api.io')
+          window.location?.hostname?.includes('webcontainer-api.io')
         ) {
           this.useMockData = true;
           clearTimeout(timeout);
@@ -99,7 +99,7 @@ class WebSocketService {
             clearTimeout(timeout);
 
             this.socket = io(this.SOCKET_URL, {
-              auth: token ? { token } : undefined,
+              auth: token ? { token } : {},
               transports: ['websocket'],
               reconnection: true,
               reconnectionAttempts: 2,
@@ -154,7 +154,7 @@ class WebSocketService {
    * Check if WebSocket is connected
    */
   public isConnected(): boolean {
-    return this.connected && this.socket !== null;
+    return this.socket?.connected ?? false;
   }
 
   /**
@@ -218,7 +218,7 @@ class WebSocketService {
   /**
    * Save data for offline access
    */
-  private saveOfflineData(key: string, data: any): void {
+  private saveOfflineData(key: string, data: unknown): void {
     try {
       this.offlineData.set(key, data);
       localStorage.setItem(
@@ -227,20 +227,6 @@ class WebSocketService {
       );
     } catch (error) {
       console.error('Error saving offline data:', error);
-    }
-  }
-
-  /**
-   * Load offline data
-   */
-  private loadOfflineData(): void {
-    try {
-      const savedData = localStorage.getItem('websocket_offline_data');
-      if (savedData) {
-        this.offlineData = new Map(JSON.parse(savedData));
-      }
-    } catch (error) {
-      console.error('Error loading offline data:', error);
     }
   }
 
@@ -291,7 +277,7 @@ class WebSocketService {
   /**
    * Register an event listener
    */
-  public on(event: string, callback: Function): void {
+  public on(event: string, callback: (data: unknown) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
@@ -302,7 +288,7 @@ class WebSocketService {
   /**
    * Remove an event listener
    */
-  public off(event: string, callback: Function): void {
+  public off(event: string, callback: (data: unknown) => void): void {
     if (!this.eventListeners.has(event)) return;
 
     this.eventListeners.get(event)?.delete(callback);
@@ -311,7 +297,7 @@ class WebSocketService {
   /**
    * Notify all listeners for a specific event
    */
-  private notifyListeners(event: string, data: any): void {
+  private notifyListeners(event: string, data: unknown): void {
     if (!this.eventListeners.has(event)) return;
 
     // Save data for offline access

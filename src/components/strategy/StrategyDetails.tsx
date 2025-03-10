@@ -1,8 +1,7 @@
 import React from 'react';
-import { Strategy, StrategyType } from '../../types';
-import { BacktestResult } from '../../types/backtest';
+import { Strategy, StrategyType, BacktestResult } from '../../types';
 import PriceChart from '../charts/PriceChart';
-import { useTradingContext } from '../../context/TradingContext';
+import { useTradingContext } from '../../hooks/useTradingContext';
 import { Clock, Zap, BarChart2, History, Sparkles, RefreshCw } from 'lucide-react';
 
 interface StrategyDetailsProps {
@@ -19,8 +18,8 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
   isOptimizing,
 }) => {
   const { marketData } = useTradingContext();
-  const [timeframe, setTimeframe] = useState<'1h' | '4h' | '1d'>('1h');
-  const [chartType, setChartType] = useState<'candlestick' | 'line'>('candlestick');
+  const [timeframe, setTimeframe] = React.useState<'1h' | '4h' | '1d'>('1h');
+  const [chartType, setChartType] = React.useState<'candlestick' | 'line'>('candlestick');
 
   const getStrategyTypeIcon = (type: StrategyType) => {
     switch (type) {
@@ -217,7 +216,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
         <div className="flex space-x-4 mb-4">
           <select
             value={timeframe}
-            onChange={e => setTimeframe(e.target.value as any)}
+            onChange={e => setTimeframe(e.target.value as '1h' | '4h' | '1d')}
             className="px-3 py-1 border border-gray-300 rounded-md"
           >
             <option value="1h">1 Hour</option>
@@ -226,7 +225,7 @@ const StrategyDetails: React.FC<StrategyDetailsProps> = ({
           </select>
           <select
             value={chartType}
-            onChange={e => setChartType(e.target.value as any)}
+            onChange={e => setChartType(e.target.value as 'candlestick' | 'line')}
             className="px-3 py-1 border border-gray-300 rounded-md"
           >
             <option value="candlestick">Candlestick</option>

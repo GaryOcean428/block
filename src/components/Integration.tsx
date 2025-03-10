@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useTradingContext } from '../context/TradingContext';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
+import { useTradingContext } from '../hooks/useTradingContext';
+
+interface ExtensionMessageData {
+  [key: string]: unknown;
+}
 
 interface ExtensionMessage {
   type: string;
-  data: Record<string, unknown>;
+  data: ExtensionMessageData;
 }
 
 const Integration: React.FC = () => {
@@ -12,39 +16,43 @@ const Integration: React.FC = () => {
   const { apiKey, apiSecret } = useSettings();
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
 
-  const handleExtensionMessage = useCallback((event: MessageEvent) => {
-    // Ensure message is from our extension
-    if (event.source !== window || !event.data || event.data.source !== 'POLONIEX_EXTENSION') {
-      return;
-    }
+  // Use useCallback to memoize the handler function to use it as a dependency
+  const handleExtensionMessage = useCallback(
+    (event: MessageEvent) => {
+      // Ensure message is from our extension
+      if (event.source !== window || !event.data || event.data.source !== 'POLONIEX_EXTENSION') {
+        return;
+      }
 
-    const message = event.data as ExtensionMessage;
-    console.log('Received message from extension:', message);
+      const message = event.data as ExtensionMessage;
+      console.log('Received message from extension:', message);
 
-    switch (message.type) {
-      case 'PLACE_ORDER':
-        // Handle order placement
-        console.log('Order received from extension:', message.data);
-        // In a real app, this would call your order placement logic
-        break;
+      switch (message.type) {
+        case 'PLACE_ORDER':
+          // Handle order placement
+          console.log('Order received from extension:', message.data);
+          // In a real app, this would call your order placement logic
+          break;
 
-      case 'SEND_CHAT':
-        // Handle chat message
-        console.log('Chat message from extension:', message.data);
-        // In a real app, this would send the chat message to your backend
-        break;
+        case 'SEND_CHAT':
+          // Handle chat message
+          console.log('Chat message from extension:', message.data);
+          // In a real app, this would send the chat message to your backend
+          break;
 
-      default:
-        addError(`Unknown message type from extension: ${message.type}`);
-    }
-  }, [addError]);
+        default:
+          addError(`Unknown message type from extension: ${message.type}`);
+      }
+    },
+    [addError]
+  );
 
   useEffect(() => {
     // Check if extension is installed
     try {
       // This is a typical pattern to detect if your extension is installed
       // by attempting to communicate with it
-      if (typeof window.chrome !== 'undefined' && chrome?.runtime?.sendMessage) {
+      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
         // Use the actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
 
@@ -77,8 +85,8 @@ const Integration: React.FC = () => {
       isExtensionInstalled &&
       apiKey &&
       apiSecret &&
-      typeof window.chrome !== 'undefined' && 
-      chrome?.runtime?.sendMessage
+      typeof chrome !== 'undefined' &&
+      chrome.runtime?.sendMessage
     ) {
       const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Lock, TerminalSquare, Zap } from 'lucide-react';
+import { Lock, Shield, TerminalSquare, Zap } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface ExtensionSettingsProps {
@@ -22,7 +22,7 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
 
   // Check if the extension is installed
   useEffect(() => {
-    if (typeof window.chrome !== 'undefined' && chrome?.runtime?.sendMessage) {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
       try {
         // Extension ID will need to be updated with your actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
@@ -35,6 +35,7 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
           }
         });
       } catch {
+        // In case of error, extension is not detected
         setExtensionStatus('Not detected');
       }
     }
@@ -69,8 +70,8 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
 
     // If we have a chrome extension API and it's installed
     if (
-      typeof window.chrome !== 'undefined' &&
-      chrome?.runtime?.sendMessage &&
+      typeof chrome !== 'undefined' &&
+      chrome.runtime?.sendMessage &&
       extensionStatus === 'Connected'
     ) {
       // Extension ID will need to be updated with your actual extension ID

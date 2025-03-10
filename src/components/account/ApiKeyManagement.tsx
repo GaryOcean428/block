@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Key,
-  Copy,
-  Eye,
-  EyeOff,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  Clock,
-  Shield,
-  RefreshCw,
-} from 'lucide-react';
+import { Copy, Plus, Trash2, AlertTriangle, Shield, RefreshCw } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface ApiKey {
@@ -28,9 +17,8 @@ interface ApiKey {
 }
 
 const ApiKeyManagement: React.FC = () => {
-  const { apiKey, apiSecret, updateSettings } = useSettings();
+  const { apiKey } = useSettings();
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showSecret, setShowSecret] = useState(false);
   const [newKeyForm, setNewKeyForm] = useState({
     name: '',
     permissions: {
@@ -200,8 +188,8 @@ const ApiKeyManagement: React.FC = () => {
                     htmlFor="permission-withdraw"
                     className="ml-2 flex items-center text-sm text-gray-700"
                   >
-                    Withdraw (Transfer funds out of your account)
-                    <span className="ml-2 text-red-600 flex items-center text-xs">
+                    Withdraw (Transfer funds out of your account){' '}
+                    <span className="text-red-600 flex items-center text-xs">
                       <AlertTriangle className="h-3 w-3 mr-0.5" />
                       High Risk
                     </span>

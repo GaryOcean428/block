@@ -1,4 +1,4 @@
-import { Strategy, MarketData, Trade } from '../types';
+import type { Strategy } from '../types';
 import { executeStrategy } from '../utils/strategyExecutors';
 import { poloniexApi } from './poloniexAPI';
 import { logger } from '../utils/logger';
@@ -12,10 +12,39 @@ interface AutomatedTradingConfig {
   trailingStopPercent?: number;
 }
 
+// Interface matching the Poloniex API response for positions
+interface Position {
+  symbol: string;
+  size: number;
+  entryPrice: number;
+  markPrice: number;
+  pnl: number;
+  type: 'long' | 'short';
+  status: 'open' | 'closed';
+}
+
+// Interface matching the Poloniex API response for balance
+interface BalanceResponse {
+  totalAmount: string;
+  availableAmount: string;
+  accountEquity: string;
+  unrealizedPnL: string;
+  todayPnL: string;
+  todayPnLPercentage: string;
+}
+
+// Interface for liquidation warnings
+interface LiquidationWarning {
+  symbol: string;
+  markPrice: number;
+  liquidationPrice: number;
+  marginRatio: number;
+}
+
 class AutomatedTradingService {
   private static instance: AutomatedTradingService;
-  private activeStrategies: Map<string, Strategy> = new Map();
-  private positions: Map<string, any> = new Map();
+  private readonly activeStrategies: Map<string, Strategy> = new Map();
+  private readonly positions: Map<string, Position> = new Map();
   private config: AutomatedTradingConfig;
   private isRunning: boolean = false;
   private updateInterval: NodeJS.Timeout | null = null;
@@ -97,7 +126,7 @@ class AutomatedTradingService {
   private async update(): Promise<void> {
     try {
       // Get account balance
-      const balance = await poloniexApi.getAccountBalance();
+      const balance: BalanceResponse = await poloniexApi.getAccountBalance();
 
       // Check if we can open new positions
       if (this.positions.size >= this.config.maxPositions) {
@@ -105,15 +134,15 @@ class AutomatedTradingService {
       }
 
       // Execute each active strategy
-      for (const [id, strategy] of this.activeStrategies) {
+      for (const [, strategy] of this.activeStrategies) {
         // Get market data
         const marketData = await poloniexApi.getMarketData(strategy.parameters.pair);
 
         // Execute strategy
-        const { signal, reason } = executeStrategy(strategy, marketData);
+        const { signal } = executeStrategy(strategy, marketData);
 
         if (signal) {
-          await this.executeTrade(strategy, signal, balance.availableAmount);
+          await this.executeTrade(strategy, signal, parseFloat(balance.availableAmount));
         }
       }
     } catch (error) {
@@ -139,7 +168,7 @@ class AutomatedTradingService {
       const quantity = riskAmount / lastPrice;
 
       // Place main order
-      const order = await poloniexApi.placeOrder(
+      await poloniexApi.placeOrder(
         pair,
         signal.toLowerCase() as 'buy' | 'sell',
         'market',
@@ -189,23 +218,25 @@ class AutomatedTradingService {
   /**
    * Handle position update from exchange
    */
-  private handlePositionUpdate(position: any): void {
-    this.positions.set(position.symbol, position);
-    logger.info('Position updated:', position);
+  private handlePositionUpdate(position: unknown): void {
+    const typedPosition = position as Position;
+    this.positions.set(typedPosition.symbol, typedPosition);
+    logger.info('Position updated:', typedPosition);
   }
 
   /**
    * Handle liquidation warning
    */
-  private handleLiquidationWarning(warning: any): void {
-    logger.warn('Liquidation warning received:', warning);
-    // Implement emergency position closure or risk reduction
+  private handleLiquidationWarning(warning: unknown): void {
+    const typedWarning = warning as LiquidationWarning;
+    logger.warn('Liquidation warning:', typedWarning);
+    // Implement risk management logic
   }
 
   /**
    * Handle margin update
    */
-  private handleMarginUpdate(margin: any): void {
+  private handleMarginUpdate(margin: unknown): void {
     logger.info('Margin updated:', margin);
     // Implement margin management logic
   }

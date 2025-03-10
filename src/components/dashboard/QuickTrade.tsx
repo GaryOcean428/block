@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTradingContext } from '../../context/TradingContext';
+import { useTradingContext } from '../../hooks/useTradingContext';
 
 const QuickTrade: React.FC = () => {
   const { placeOrder, isLoading } = useTradingContext();

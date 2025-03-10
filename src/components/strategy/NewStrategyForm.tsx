@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useTradingContext } from '../../context/TradingContext';
-import { Strategy, StrategyType } from '../../types';
+import { useTradingContext } from '../../hooks/useTradingContext';
+import { StrategyType } from '../../types';
+import type { Strategy, StrategyParameters } from '../../types';
 import { X } from 'lucide-react';
 
 interface NewStrategyFormProps {
@@ -29,7 +30,7 @@ const NewStrategyForm: React.FC<NewStrategyFormProps> = ({ onClose }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    let parameters: any = { pair };
+    let parameters: StrategyParameters = { pair };
 
     switch (type) {
       case StrategyType.MA_CROSSOVER:

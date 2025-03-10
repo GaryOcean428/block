@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTradingContext } from '../context/TradingContext';
+import { useTradingContext } from '../hooks/useTradingContext';
 import PriceChart from '../components/charts/PriceChart';
 import StrategyPerformance from '../components/dashboard/StrategyPerformance';
 import RecentTrades from '../components/dashboard/RecentTrades';

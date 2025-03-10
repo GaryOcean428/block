@@ -3,12 +3,22 @@
  * Configures the testing environment and adds helpful utilities
  */
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { cleanup } from '@testing-library/react';
+import { afterEach, expect, vi } from 'vitest';
 
 // Extend Vitest's expect with Testing Library matchers
 expect.extend(matchers);
+
+declare module 'vitest' {
+  interface Assertion {
+    toBeInTheDocument(): void;
+    toHaveClass(className: string): void;
+    toHaveAttribute(attr: string, value?: string): void;
+    toContainElement(element: HTMLElement | null): void;
+    toBeDisabled(): void;
+  }
+}
 
 // Clean up after each test
 afterEach(() => {
