@@ -10,9 +10,6 @@ const QuickTrade: React.FC = () => {
   const [price, setPrice] = useState('');
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
 
-  // In a real application, this would be fetched from an API
-  const marketPrice = 51234.56;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setOrderStatus(null);

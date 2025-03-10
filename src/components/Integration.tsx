@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useTradingContext } from '../context/TradingContext';
 import { useSettings } from '../context/SettingsContext';
 
 interface ExtensionMessage {
   type: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 const Integration: React.FC = () => {
@@ -12,70 +12,7 @@ const Integration: React.FC = () => {
   const { apiKey, apiSecret } = useSettings();
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
 
-  useEffect(() => {
-    // Check if extension is installed
-    try {
-      // This is a typical pattern to detect if your extension is installed
-      // by attempting to communicate with it
-      if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
-        // Use the actual extension ID
-        const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-
-        chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
-          if (response && response.installed) {
-            setIsExtensionInstalled(true);
-            console.log('Extension is installed and connected!');
-          } else {
-            setIsExtensionInstalled(false);
-            console.log('Extension is not installed or not responding');
-          }
-        });
-      }
-    } catch (error) {
-      console.log('Error checking extension installation:', error);
-      setIsExtensionInstalled(false);
-    }
-
-    // Set up listener for messages from the extension
-    window.addEventListener('message', handleExtensionMessage);
-
-    return () => {
-      window.removeEventListener('message', handleExtensionMessage);
-    };
-  }, []);
-
-  // Update extension with credentials if available
-  useEffect(() => {
-    if (
-      isExtensionInstalled &&
-      apiKey &&
-      apiSecret &&
-      window.chrome &&
-      chrome.runtime &&
-      chrome.runtime.sendMessage
-    ) {
-      const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-
-      // Send credentials to extension
-      chrome.runtime.sendMessage(
-        extensionId,
-        {
-          type: 'UPDATE_CREDENTIALS',
-          data: {
-            apiKey,
-            apiSecret,
-          },
-        },
-        response => {
-          if (response && response.success) {
-            console.log('API credentials updated in extension');
-          }
-        }
-      );
-    }
-  }, [isExtensionInstalled, apiKey, apiSecret]);
-
-  const handleExtensionMessage = (event: MessageEvent) => {
+  const handleExtensionMessage = useCallback((event: MessageEvent) => {
     // Ensure message is from our extension
     if (event.source !== window || !event.data || event.data.source !== 'POLONIEX_EXTENSION') {
       return;
@@ -100,7 +37,69 @@ const Integration: React.FC = () => {
       default:
         addError(`Unknown message type from extension: ${message.type}`);
     }
-  };
+  }, [addError]);
+
+  useEffect(() => {
+    // Check if extension is installed
+    try {
+      // This is a typical pattern to detect if your extension is installed
+      // by attempting to communicate with it
+      if (typeof window.chrome !== 'undefined' && chrome?.runtime?.sendMessage) {
+        // Use the actual extension ID
+        const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
+
+        chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
+          if (response?.installed) {
+            setIsExtensionInstalled(true);
+            console.log('Extension is installed and connected!');
+          } else {
+            setIsExtensionInstalled(false);
+            console.log('Extension is not installed or not responding');
+          }
+        });
+      }
+    } catch (error) {
+      console.log('Error checking extension installation:', error);
+      setIsExtensionInstalled(false);
+    }
+
+    // Set up listener for messages from the extension
+    window.addEventListener('message', handleExtensionMessage);
+
+    return () => {
+      window.removeEventListener('message', handleExtensionMessage);
+    };
+  }, [handleExtensionMessage]);
+
+  // Update extension with credentials if available
+  useEffect(() => {
+    if (
+      isExtensionInstalled &&
+      apiKey &&
+      apiSecret &&
+      typeof window.chrome !== 'undefined' && 
+      chrome?.runtime?.sendMessage
+    ) {
+      const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
+
+      // Send credentials to extension
+      chrome.runtime.sendMessage(
+        extensionId,
+        {
+          type: 'UPDATE_CREDENTIALS',
+          data: {
+            apiKey,
+            apiSecret,
+          },
+        },
+        response => {
+          if (response?.success) {
+            console.log('API credentials updated in extension');
+          }
+        }
+      );
+    }
+  }, [isExtensionInstalled, apiKey, apiSecret]);
 
   // This component doesn't render anything visible, it just handles extension communication
   return null;

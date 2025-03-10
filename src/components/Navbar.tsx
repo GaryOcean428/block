@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
 
 const Navbar: React.FC = () => {
-  const [notifications, setNotifications] = useState<number>(3);
+  const [notifications] = useState<number>(3);
   const { hasStoredCredentials } = useSettings();
 
   return (

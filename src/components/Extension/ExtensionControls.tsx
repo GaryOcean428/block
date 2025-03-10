@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, ChevronUp, RefreshCw, Settings, Info } from 'lucide-react';
+import { X, RefreshCw, Info } from 'lucide-react';
 import ExtensionStatus from './ExtensionStatus';
 import ExtensionSettings from './ExtensionSettings';
-import { useSettings } from '../../context/SettingsContext';
 
 interface ExtensionControlsProps {
   onClose?: () => void;
 }
 
 const ExtensionControls: React.FC<ExtensionControlsProps> = ({ onClose }) => {
-  const { apiKey, apiSecret } = useSettings();
   const [activePanel, setActivePanel] = useState<'status' | 'settings' | 'info'>('status');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -22,7 +20,7 @@ const ExtensionControls: React.FC<ExtensionControlsProps> = ({ onClose }) => {
         // Extension ID will need to be updated with your actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
 
-        chrome.runtime.sendMessage(extensionId, { type: 'REFRESH_DATA' }, response => {
+        chrome.runtime.sendMessage(extensionId, { type: 'REFRESH_DATA' }, () => {
           setIsRefreshing(false);
         });
       } catch (error) {

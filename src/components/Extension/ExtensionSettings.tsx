@@ -22,19 +22,19 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
 
   // Check if the extension is installed
   useEffect(() => {
-    if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+    if (typeof window.chrome !== 'undefined' && chrome?.runtime?.sendMessage) {
       try {
         // Extension ID will need to be updated with your actual extension ID
         const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
 
         chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
-          if (response && response.installed) {
+          if (response?.installed) {
             setExtensionStatus('Connected');
           } else {
             setExtensionStatus('Not detected');
           }
         });
-      } catch (error) {
+      } catch {
         setExtensionStatus('Not detected');
       }
     }
@@ -69,9 +69,8 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
 
     // If we have a chrome extension API and it's installed
     if (
-      window.chrome &&
-      chrome.runtime &&
-      chrome.runtime.sendMessage &&
+      typeof window.chrome !== 'undefined' &&
+      chrome?.runtime?.sendMessage &&
       extensionStatus === 'Connected'
     ) {
       // Extension ID will need to be updated with your actual extension ID
