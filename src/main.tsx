@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Strategies from './pages/Strategies';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import AutoTrader from './pages/AutoTrader';
+import ExtensionDownload from './pages/ExtensionDownload';
 import { AuthProvider } from './context/AuthContextProvider';
 import { ProtectedRoute } from './components/Auth';
 import './index.css';
@@ -37,6 +39,20 @@ try {
                 <ProtectedRoute>
                   <Strategies />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/auto-trader"
+              element={
+                <ProtectedRoute>
+                  <AutoTrader />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/extension-download"
+              element={
+                <ExtensionDownload />
               }
             />
             <Route

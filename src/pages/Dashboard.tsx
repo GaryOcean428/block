@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import PriceChart from '../components/charts/PriceChart';
-import Sidebar from '../components/Sidebar';
-import SimpleNavbar from '../components/SimpleNavbar';
-
-interface MarketData {
-  pair: string;
-  timestamp: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
+import Navbar from '../components/Navbar';
+import { 
+  TrendingUp, 
+  BarChart4, 
+  DollarSign, 
+  Zap, 
+  RefreshCw,
+  Clock
+} from 'lucide-react';
+import { MarketData } from '../types';
 
 // Generate mock market data for testing
 const generateMockMarketData = (count = 20, pair = 'BTC-USDT'): MarketData[] => {
@@ -82,7 +80,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Load data for selected pair
-  const loadMarketData = () => {
+  const loadMarketData = useCallback(() => {
     setIsLoading(true);
     setError(null);
 
@@ -96,139 +94,228 @@ const Dashboard: React.FC = () => {
       setError('Failed to load market data');
       setIsLoading(false);
     }
-  };
+  }, [selectedPair]);
 
   // Change selected pair and reload data
   const changePair = (pair: string) => {
     setSelectedPair(pair);
-    setMarketData(generateMockMarketData(30, pair));
+    // Generating new data will happen in the useEffect triggered by selectedPair change
   };
 
+  // Update market data when selected pair changes
+  useEffect(() => {
+    loadMarketData();
+  }, [selectedPair, loadMarketData]);
+
+  // Calculate current price and stats
+  const currentPrice = marketData.length > 0 
+    ? marketData[marketData.length - 1].close 
+    : 0;
+    
+  const previousPrice = marketData.length > 1 
+    ? marketData[marketData.length - 2].close 
+    : currentPrice;
+    
+  const priceChange = currentPrice - previousPrice;
+  const priceChangePercent = previousPrice ? (priceChange / previousPrice) * 100 : 0;
+  const isPriceUp = priceChange >= 0;
+
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <Sidebar />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navbar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <SimpleNavbar />
-
-        <div className="flex-1 overflow-y-auto p-6">
-          <h1 className="text-2xl font-bold mb-6">Trading Dashboard</h1>
-
-          {/* Market selector */}
-          <div className="market-selector" style={{ marginBottom: '20px' }}>
-            <h2>Select Market</h2>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => changePair('BTC-USDT')}
-                style={{
-                  background: selectedPair === 'BTC-USDT' ? '#4a90e2' : '#333',
-                  color: 'white',
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
-              >
-                BTC-USDT
-              </button>
-              <button
-                onClick={() => changePair('ETH-USDT')}
-                style={{
-                  background: selectedPair === 'ETH-USDT' ? '#4a90e2' : '#333',
-                  color: 'white',
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
-              >
-                ETH-USDT
-              </button>
-              <button
-                onClick={() => changePair('SOL-USDT')}
-                style={{
-                  background: selectedPair === 'SOL-USDT' ? '#4a90e2' : '#333',
-                  color: 'white',
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
-              >
-                SOL-USDT
-              </button>
-            </div>
-          </div>
-
-          {/* Chart section */}
-          <div className="chart-section" style={{ marginBottom: '40px' }}>
-            <h2>Price Chart: {selectedPair}</h2>
-            <div
-              style={{
-                height: '400px',
-                border: '1px solid #333',
-                borderRadius: '8px',
-                overflow: 'hidden',
-              }}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Trading Dashboard</h1>
+          
+          <div className="mt-4 md:mt-0 flex items-center">
+            <button 
+              onClick={loadMarketData}
+              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm mr-3"
             >
-              <ErrorBoundary fallback={<div>Chart failed to load</div>}>
-                {isLoading ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
-                    }}
-                  >
-                    Loading...
-                  </div>
-                ) : marketData.length > 0 ? (
-                  <PriceChart data={marketData} pair={selectedPair} />
-                ) : (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
-                    }}
-                  >
-                    No data available
-                  </div>
-                )}
-              </ErrorBoundary>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </button>
+          </div>
+        </div>
+
+        {/* Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Current Price</h3>
+              <DollarSign className="h-6 w-6 text-blue-500" />
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                ${currentPrice.toFixed(2)}
+              </span>
+              <span className={`ml-2 text-sm font-medium ${isPriceUp ? 'text-green-600' : 'text-red-600'}`}>
+                {isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              24h change: {isPriceUp ? '+' : ''}{priceChange.toFixed(2)}
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Trade Volume</h3>
+              <BarChart4 className="h-6 w-6 text-purple-500" />
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                ${(marketData.reduce((sum, data) => sum + data.volume, 0) / 1000000).toFixed(2)}M
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Last updated: {new Date().toLocaleTimeString()}
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Active Strategies</h3>
+              <Zap className="h-6 w-6 text-amber-500" />
+            </div>
+            <div className="flex items-baseline">
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                {(Math.random() * 10).toFixed(0)}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Performing well: {(Math.random() * 5).toFixed(0)}
+            </p>
+          </div>
+        </div>
+
+        {/* Market selector and Chart section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <h2 className="text-xl font-medium text-gray-900 dark:text-white mb-4 sm:mb-0">
+                <TrendingUp className="inline-block h-5 w-5 mr-2 text-blue-500" />
+                Price Chart: {selectedPair}
+              </h2>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => changePair('BTC-USDT')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    selectedPair === 'BTC-USDT'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  BTC-USDT
+                </button>
+                <button
+                  onClick={() => changePair('ETH-USDT')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    selectedPair === 'ETH-USDT'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  ETH-USDT
+                </button>
+                <button
+                  onClick={() => changePair('SOL-USDT')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    selectedPair === 'SOL-USDT'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  SOL-USDT
+                </button>
+              </div>
             </div>
           </div>
+          
+          <div className="p-4 h-[400px]">
+            <ErrorBoundary 
+              fallback={
+                <div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded">
+                  Chart failed to load. Please try again.
+                </div>
+              }
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                  <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+                  Loading chart data...
+                </div>
+              ) : marketData.length > 0 ? (
+                <PriceChart data={marketData} pair={selectedPair} />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                  No data available. Please try another pair.
+                </div>
+              )}
+            </ErrorBoundary>
+          </div>
+        </div>
 
-          {/* Recent trades section */}
-          <div className="recent-trades-section">
-            <h2>Recent Trades</h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#333', color: 'white' }}>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Pair</th>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Type</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Price</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
-                  <th style={{ padding: '10px', textAlign: 'center' }}>Time</th>
+        {/* Recent trades section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-medium text-gray-900 dark:text-white">
+              <Clock className="inline-block h-5 w-5 mr-2 text-blue-500" />
+              Recent Trades
+            </h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Pair
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Price
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Time
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {trades.map((trade, index) => (
-                  <tr key={trade.id} style={{ background: index % 2 ? '#f9f9f9' : 'white' }}>
-                    <td style={{ padding: '10px' }}>{trade.pair}</td>
-                    <td style={{ padding: '10px', color: trade.type === 'BUY' ? 'green' : 'red' }}>
-                      {trade.type}
+                  <tr key={trade.id} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {trade.pair}
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        trade.type === 'BUY' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}>
+                        {trade.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-300">
                       ${trade.price.toFixed(2)}
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-300">
                       {trade.amount.toFixed(4)}
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
                       ${trade.total.toFixed(2)}
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-300">
                       {new Date(trade.timestamp).toLocaleString()}
                     </td>
                   </tr>
