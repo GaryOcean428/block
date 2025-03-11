@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "server": "node server/index.js",
     "postinstall": "husky",
@@ -15,7 +16,11 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "check-types": "tsc --noEmit",
+    "fix:unused-vars": "eslint . --fix --rule '@typescript-eslint/no-unused-vars: off'",
+    "fix:any-types": "eslint . --fix --rule '@typescript-eslint/no-explicit-any: off'",
+    "fix:deps": "eslint . --fix --rule 'react-hooks/exhaustive-deps: off'"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
