@@ -1,4 +1,13 @@
 import React, { useEffect, useRef } from 'react';
+// Add window type declaration for TypeScript
+declare global {
+  interface Window {
+    initShareModal?: () => void;
+  }
+}
+
+// Import the share modal script but don't execute it immediately
+// The script will be initialized in useEffect
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -21,6 +30,25 @@ const ShareModal: React.FC<ShareModalProps> = ({
   const shareButtonsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Load the share modal script dynamically
+    const loadShareModalScript = async () => {
+      try {
+        await import('./share-modal.js');
+        console.log('Share modal script loaded');
+
+        // Initialize after a small delay to ensure script is processed
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && window.initShareModal) {
+            window.initShareModal();
+          }
+        }, 100);
+      } catch (error) {
+        console.error('Failed to load share modal script:', error);
+      }
+    };
+
+    loadShareModalScript();
+
     // Safe DOM manipulation with null checks
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {

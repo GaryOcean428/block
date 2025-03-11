@@ -6,7 +6,7 @@
 // Safer initialization function that will wait for DOM elements to be available
 function initializeShareModal() {
   try {
-    // Get the share modal elements
+    // Safe element retrieval with null checks
     const shareButton = document.querySelector('#share-button');
     const shareModal = document.querySelector('#share-modal');
     const copyLinkButton = document.querySelector('#copy-link-button');
@@ -19,26 +19,41 @@ function initializeShareModal() {
     });
 
     // Only proceed if required elements exist
-    if (shareButton && shareModal) {
-      console.log('Share modal elements found, initializing event listeners');
+    if (!shareButton || !shareModal) {
+      console.warn('Share modal elements not found in DOM. Will retry later.');
+      return false; // Elements not found
+    }
 
-      // Add click event to share button
+    console.log('Share modal elements found, initializing event listeners');
+
+    // Safe event listener adding with null check
+    if (shareButton) {
       shareButton.addEventListener('click', e => {
         e.preventDefault();
-        shareModal.classList.remove('hidden');
+        if (shareModal) {
+          shareModal.classList.remove('hidden');
+        }
       });
+    }
 
-      // Close modal when clicking outside
+    // Close modal when clicking outside - safely
+    if (shareModal) {
       document.addEventListener('click', event => {
-        if (event.target.closest('#share-modal') || event.target.closest('#share-button')) {
+        if (
+          !shareModal ||
+          event.target.closest('#share-modal') ||
+          event.target.closest('#share-button')
+        ) {
           return;
         }
         shareModal.classList.add('hidden');
       });
+    }
 
-      // Handle copy link button if it exists
-      if (copyLinkButton) {
-        copyLinkButton.addEventListener('click', () => {
+    // Handle copy link button if it exists - safely
+    if (copyLinkButton) {
+      copyLinkButton.addEventListener('click', () => {
+        try {
           const link = window.location.href;
           navigator.clipboard
             .writeText(link)
@@ -48,35 +63,43 @@ function initializeShareModal() {
             .catch(err => {
               console.error('Failed to copy link: ', err);
             });
-        });
-      }
-
-      console.log('Share modal initialization complete');
-      return true; // Initialization successful
-    } else {
-      console.warn('Share modal elements not found in DOM. Will retry later.');
-      return false; // Elements not found
+        } catch (error) {
+          console.error('Error in copy link handler:', error);
+        }
+      });
     }
+
+    console.log('Share modal initialization complete');
+    return true; // Initialization successful
   } catch (error) {
     console.error('Error initializing share modal:', error);
     return false; // Error during initialization
   }
 }
 
-// Attempt initialization with retries
-let initAttempts = 0;
-const MAX_ATTEMPTS = 5;
+// In a React application, we need to wait for the app to render the components
+// before we can initialize the share modal.
 
-function attemptInitialization() {
-  if (initAttempts >= MAX_ATTEMPTS) {
-    console.warn('Max attempts reached for share modal initialization. Giving up.');
-    return;
-  }
+// Wait for DOM content to be loaded before trying to access elements
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('DOM content loaded, preparing share modal');
+});
 
-  initAttempts++;
+// This will be initialized by the React component when it mounts
+window.initShareModal = function () {
+  console.log('Share modal initialization requested by React component');
+  // Attempt initialization with retries
+  let initAttempts = 0;
+  const MAX_ATTEMPTS = 5;
 
-  // Check if document is ready
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  function attemptInitialization() {
+    if (initAttempts >= MAX_ATTEMPTS) {
+      console.warn('Max attempts reached for share modal initialization. Giving up.');
+      return;
+    }
+
+    initAttempts++;
+
     // Try to initialize
     const success = initializeShareModal();
 
@@ -88,11 +111,8 @@ function attemptInitialization() {
       );
       setTimeout(attemptInitialization, delay);
     }
-  } else {
-    // Document not ready, wait for DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', attemptInitialization);
   }
-}
 
-// Start the initialization process
-attemptInitialization();
+  // Start the initialization process with a longer delay
+  setTimeout(attemptInitialization, 1000); // Give React more time to render
+};

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Strategy } from '../../types';
+import { type Strategy } from '../../types/strategy';
 import { TrendingUp, TrendingDown, BarChart2 } from 'lucide-react';
 
 interface StrategyPerformanceProps {

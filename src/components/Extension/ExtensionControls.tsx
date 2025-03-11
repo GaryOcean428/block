@@ -1,8 +1,12 @@
 import { Info, RefreshCw, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings } from '../../hooks/useSettings';
 import ExtensionSettings from './ExtensionSettings';
 import ExtensionStatus from './ExtensionStatus';
+import {
+  isChromeExtensionApiAvailable,
+  safelySendExtensionMessage,
+} from '../../utils/extensionHelper';
 
 interface ExtensionControlsProps {
   onClose?: () => void;
@@ -14,27 +18,26 @@ const ExtensionControls: React.FC<ExtensionControlsProps> = ({ onClose }) => {
   const [activePanel, setActivePanel] = useState<'status' | 'settings' | 'info'>('status');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
 
-    // Refresh data from extension
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      try {
-        // Extension ID will need to be updated with your actual extension ID
-        const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-
-        chrome.runtime.sendMessage(extensionId, { type: 'REFRESH_DATA' }, () => {
-          setIsRefreshing(false);
-        });
-      } catch (error) {
-        console.error('Error refreshing extension data:', error);
-        setIsRefreshing(false);
+    try {
+      // Check if the Chrome extension API is available
+      if (isChromeExtensionApiAvailable()) {
+        try {
+          // Try to send a message to the extension
+          await safelySendExtensionMessage({ type: 'REFRESH_DATA' });
+        } catch (error) {
+          // Error handled in safelySendExtensionMessage, no need to do anything here
+        }
+      } else {
+        // Chrome extension API not available, wait a bit to simulate refresh
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-    } else {
-      // Chrome extension API not available, simulate refresh
-      setTimeout(() => {
-        setIsRefreshing(false);
-      }, 1000);
+    } catch (error) {
+      console.error('Error refreshing extension data:', error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trade } from '../../types';
+import type { Trade } from '../../types/trade';
 
 interface RecentTradesProps {
   trades: Trade[];

@@ -7,6 +7,8 @@ let accountData = {};
 let openPositions = [];
 let orderHistory = [];
 let interval = null;
+let balanceHistory = [];
+let lastBalanceUpdate = Date.now();
 
 // Function to start data extraction
 function startDataExtraction() {
@@ -19,6 +21,9 @@ function startDataExtraction() {
   // Extract data every 5 seconds
   interval = setInterval(extractPoloniexData, 5000);
   isExtractingData = true;
+
+  // Also extract data immediately
+  extractPoloniexData();
 }
 
 // Function to stop data extraction
@@ -40,6 +45,23 @@ function extractPoloniexData() {
     const accountDataElement = document.querySelector('.account-summary');
     if (accountDataElement) {
       accountData = extractAccountInfo();
+
+      // Track balance history
+      if (Date.now() - lastBalanceUpdate > 60000) {
+        // Once per minute
+        if (accountData.totalBalance) {
+          balanceHistory.push({
+            timestamp: Date.now(),
+            balance: accountData.totalBalance,
+          });
+
+          // Keep only last 24 hours of data
+          const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+          balanceHistory = balanceHistory.filter(entry => entry.timestamp >= oneDayAgo);
+
+          lastBalanceUpdate = Date.now();
+        }
+      }
     }
 
     // Extract positions data
@@ -61,6 +83,7 @@ function extractPoloniexData() {
         accountData,
         positions: openPositions,
         orders: orderHistory,
+        balanceHistory,
         timestamp: Date.now(),
       },
     });
@@ -128,10 +151,28 @@ function extractAccountInfo() {
       }
     });
 
+    // Look for margin ratio elements
+    const marginElements = document.querySelectorAll('.margin-ratio, .leverage-display');
+    let marginRatio = null;
+    let leverage = null;
+
+    marginElements.forEach(element => {
+      const text = element.textContent.trim().toLowerCase();
+      if (text.includes('margin')) {
+        const marginValue = text.replace(/[^0-9.]/g, '');
+        marginRatio = parseFloat(marginValue);
+      } else if (text.includes('leverage')) {
+        const leverageValue = text.replace(/[^0-9.]/g, '');
+        leverage = parseFloat(leverageValue);
+      }
+    });
+
     return {
       totalBalance,
       availableBalance,
       dailyPnl,
+      marginRatio,
+      leverage,
       timestamp: Date.now(),
     };
   } catch (error) {
@@ -155,14 +196,20 @@ function extractPositionsInfo() {
       const entryPrice = row.querySelector('.entry-price')?.textContent.trim();
       const markPrice = row.querySelector('.mark-price')?.textContent.trim();
       const pnl = row.querySelector('.pnl')?.textContent.trim();
+      const leverage = row.querySelector('.leverage')?.textContent.trim();
+      const liquidationPrice = row.querySelector('.liquidation-price')?.textContent.trim();
+      const side = row.querySelector('.side')?.textContent.trim()?.toLowerCase();
 
       if (symbol) {
         positions.push({
           symbol,
-          size: parseFloat(size.replace(/[^0-9.-]/g, '')),
-          entryPrice: parseFloat(entryPrice.replace(/[^0-9.-]/g, '')),
-          markPrice: parseFloat(markPrice.replace(/[^0-9.-]/g, '')),
-          pnl: parseFloat(pnl.replace(/[^0-9.-]/g, '')),
+          size: parseFloat(size?.replace(/[^0-9.-]/g, '') || '0'),
+          entryPrice: parseFloat(entryPrice?.replace(/[^0-9.-]/g, '') || '0'),
+          markPrice: parseFloat(markPrice?.replace(/[^0-9.-]/g, '') || '0'),
+          pnl: parseFloat(pnl?.replace(/[^0-9.-]/g, '') || '0'),
+          leverage: parseFloat(leverage?.replace(/[^0-9.-]/g, '') || '1'),
+          liquidationPrice: parseFloat(liquidationPrice?.replace(/[^0-9.-]/g, '') || '0'),
+          side: side?.includes('long') ? 'long' : 'short',
           timestamp: Date.now(),
         });
       }
@@ -192,17 +239,19 @@ function extractOrderHistory() {
       const price = row.querySelector('.price')?.textContent.trim();
       const amount = row.querySelector('.amount')?.textContent.trim();
       const status = row.querySelector('.status')?.textContent.trim();
+      const time = row.querySelector('.time')?.textContent.trim();
 
       if (orderId && symbol) {
         orders.push({
           orderId,
           symbol,
-          type,
-          side,
-          price: parseFloat(price.replace(/[^0-9.-]/g, '')),
-          amount: parseFloat(amount.replace(/[^0-9.-]/g, '')),
-          status,
+          type: type?.toLowerCase() || '',
+          side: side?.toLowerCase() || '',
+          price: parseFloat(price?.replace(/[^0-9.-]/g, '') || '0'),
+          amount: parseFloat(amount?.replace(/[^0-9.-]/g, '') || '0'),
+          status: status?.toLowerCase() || '',
           timestamp: Date.now(),
+          orderTime: time || new Date().toISOString(),
         });
       }
     });
@@ -233,9 +282,33 @@ function showExtractorStatus() {
     document.body.appendChild(statusBar);
   }
 
+  // Create balance change indicator
+  let balanceChangeText = '';
+  if (balanceHistory.length >= 2) {
+    const latestBalance = balanceHistory[balanceHistory.length - 1].balance;
+    const earliestBalance = balanceHistory[0].balance;
+    const change = latestBalance - earliestBalance;
+    const changePercent = (change / earliestBalance) * 100;
+
+    balanceChangeText = `
+      <div>24h Change: <span style="color: ${change >= 0 ? '#10b981' : '#ef4444'}">
+        ${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent.toFixed(2)}%)
+      </span></div>
+    `;
+  }
+
+  // Create positions summary
+  let positionsText = '';
+  if (openPositions.length > 0) {
+    positionsText = `<div>Open Positions: ${openPositions.length}</div>`;
+  }
+
   statusBar.innerHTML = `
     <div>Trading Extension Active</div>
     <div>Data synced: ${new Date().toLocaleTimeString()}</div>
+    ${accountData.totalBalance ? `<div>Balance: ${accountData.totalBalance.toFixed(2)}</div>` : ''}
+    ${balanceChangeText}
+    ${positionsText}
   `;
 }
 
@@ -301,6 +374,38 @@ function executeTrade(tradeData) {
       }
     }
 
+    // Set stop loss if provided
+    if (tradeData.stopLossPercent) {
+      const stopLossInput = document.querySelector('input.stop-loss-input, .stop-loss');
+      if (stopLossInput) {
+        const stopPrice =
+          tradeData.side.toLowerCase() === 'buy'
+            ? tradeData.price * (1 - tradeData.stopLossPercent / 100)
+            : tradeData.price * (1 + tradeData.stopLossPercent / 100);
+
+        stopLossInput.value = stopPrice.toFixed(2);
+        // Trigger input event
+        const event = new Event('input', { bubbles: true });
+        stopLossInput.dispatchEvent(event);
+      }
+    }
+
+    // Set take profit if provided
+    if (tradeData.takeProfitPercent) {
+      const takeProfitInput = document.querySelector('input.take-profit-input, .take-profit');
+      if (takeProfitInput) {
+        const takePrice =
+          tradeData.side.toLowerCase() === 'buy'
+            ? tradeData.price * (1 + tradeData.takeProfitPercent / 100)
+            : tradeData.price * (1 - tradeData.takeProfitPercent / 100);
+
+        takeProfitInput.value = takePrice.toFixed(2);
+        // Trigger input event
+        const event = new Event('input', { bubbles: true });
+        takeProfitInput.dispatchEvent(event);
+      }
+    }
+
     // Click buy or sell button
     let actionButton;
     if (tradeData.side.toLowerCase() === 'buy') {
@@ -346,6 +451,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         accountData,
         positions: openPositions,
         orders: orderHistory,
+        balanceHistory,
       },
     });
   } else if (request.type === 'EXECUTE_TRADE') {
@@ -360,8 +466,95 @@ startDataExtraction();
 
 // Inject trading buttons if needed
 function injectTradingButtons() {
-  // This function would add quick trading buttons to the Poloniex interface
-  // Implementation would depend on the specific Poloniex UI structure
+  try {
+    // Wait for the trading interface to be fully loaded
+    const checkForTradingInterface = setInterval(() => {
+      const tradingForm = document.querySelector('.trading-form, .order-form');
+      if (tradingForm) {
+        clearInterval(checkForTradingInterface);
+
+        // Create a container for our buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'extension-buttons';
+        buttonContainer.style.marginTop = '10px';
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '10px';
+
+        // Create quick trade buttons
+        const quickBuyButton = document.createElement('button');
+        quickBuyButton.innerText = 'Quick Buy';
+        quickBuyButton.className = 'quick-buy-button';
+        quickBuyButton.style.backgroundColor = '#10b981';
+        quickBuyButton.style.color = 'white';
+        quickBuyButton.style.border = 'none';
+        quickBuyButton.style.padding = '8px 16px';
+        quickBuyButton.style.borderRadius = '4px';
+        quickBuyButton.style.cursor = 'pointer';
+        quickBuyButton.style.flex = '1';
+
+        const quickSellButton = document.createElement('button');
+        quickSellButton.innerText = 'Quick Sell';
+        quickSellButton.className = 'quick-sell-button';
+        quickSellButton.style.backgroundColor = '#ef4444';
+        quickSellButton.style.color = 'white';
+        quickSellButton.style.border = 'none';
+        quickSellButton.style.padding = '8px 16px';
+        quickSellButton.style.borderRadius = '4px';
+        quickSellButton.style.cursor = 'pointer';
+        quickSellButton.style.flex = '1';
+
+        // Add buttons to container
+        buttonContainer.appendChild(quickBuyButton);
+        buttonContainer.appendChild(quickSellButton);
+
+        // Add container to trading form
+        tradingForm.appendChild(buttonContainer);
+
+        // Add click handlers
+        quickBuyButton.addEventListener('click', () => {
+          // Get current pair and price
+          const pairElement = document.querySelector('.current-pair, .symbol-display');
+          const priceElement = document.querySelector('.current-price, .price-display');
+
+          if (pairElement && priceElement) {
+            const pair = pairElement.textContent.trim();
+            const price = parseFloat(priceElement.textContent.replace(/[^0-9.-]/g, ''));
+
+            // Execute a market buy for a small amount
+            executeTrade({
+              pair,
+              side: 'buy',
+              type: 'market',
+              amount: 0.01, // Small default amount
+              price,
+            });
+          }
+        });
+
+        quickSellButton.addEventListener('click', () => {
+          // Get current pair and price
+          const pairElement = document.querySelector('.current-pair, .symbol-display');
+          const priceElement = document.querySelector('.current-price, .price-display');
+
+          if (pairElement && priceElement) {
+            const pair = pairElement.textContent.trim();
+            const price = parseFloat(priceElement.textContent.replace(/[^0-9.-]/g, ''));
+
+            // Execute a market sell for a small amount
+            executeTrade({
+              pair,
+              side: 'sell',
+              type: 'market',
+              amount: 0.01, // Small default amount
+              price,
+            });
+          }
+        });
+      }
+    }, 1000);
+  } catch (error) {
+    console.error('Error injecting trading buttons:', error);
+  }
 }
 
 // Wait for page to be fully loaded before injecting UI controls

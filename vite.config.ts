@@ -15,9 +15,12 @@ export default defineConfig({
       '@features': resolve(__dirname, './src/features'),
       '@components': resolve(__dirname, './src/core/components'),
       '@hooks': resolve(__dirname, './src/core/hooks'),
-      '@utils': resolve(__dirname, './src/core/utils'),
+      '@utils': resolve(__dirname, './src/utils'), // Fixed - was incorrectly pointing to src/core/utils
       '@config': resolve(__dirname, './src/config'),
       '@services': resolve(__dirname, './src/services'),
+      '@types': resolve(__dirname, './src/types'), // Added missing alias
+      '@assets': resolve(__dirname, './src/assets'), // Added missing alias
+      '@test': resolve(__dirname, './src/test'), // Added missing alias
     },
   },
   server: {

@@ -1,11 +1,29 @@
-import { Bell, Menu, User } from 'lucide-react';
-import React, { useState } from 'react';
+import { Menu, User } from 'lucide-react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../hooks/useSettings';
+import NotificationCenter from './notifications/NotificationCenter';
+import { useNotifications } from '../hooks/useNotifications';
 
 const Navbar: React.FC = () => {
-  const [notifications] = useState<number>(3);
   const { hasStoredCredentials } = useSettings();
+
+  // Use the notification system
+  const {
+    notifications,
+    unreadCount,
+    preferences,
+    refreshNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    updatePreferences,
+  } = useNotifications();
+
+  // Load notifications on mount
+  useEffect(() => {
+    refreshNotifications();
+  }, [refreshNotifications]);
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-2.5 flex justify-between items-center">
@@ -18,14 +36,16 @@ const Navbar: React.FC = () => {
 
       <div className="flex items-center space-x-4">
         <div className="relative">
-          <button className="text-gray-500 hover:text-gray-700">
-            <Bell className="h-6 w-6" />
-            {notifications > 0 && (
-              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                {notifications}
-              </span>
-            )}
-          </button>
+          <NotificationCenter
+            notifications={notifications}
+            unreadCount={unreadCount}
+            preferences={preferences}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onDeleteNotification={deleteNotification}
+            onUpdatePreferences={updatePreferences}
+            refreshNotifications={refreshNotifications}
+          />
         </div>
 
         <div className="flex items-center">

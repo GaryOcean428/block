@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, Check, AlertTriangle, RefreshCw, MonitorSmartphone } from 'lucide-react';
+import {
+  isChromeExtensionApiAvailable,
+  safelySendExtensionMessage,
+} from '../../utils/extensionHelper';
 
 interface ExtensionStatusProps {
   onRefreshRequest?: () => void;
@@ -22,56 +26,90 @@ const ExtensionStatus: React.FC<ExtensionStatusProps> = ({ onRefreshRequest }) =
     checkExtensionStatus();
   }, []);
 
-  const checkExtensionStatus = () => {
+  const checkExtensionStatus = async () => {
     setExtensionStatus('checking');
     setTradingViewStatus('checking');
     setPoloniexStatus('checking');
     setIsRefreshing(true);
 
-    // Check if extension is installed
-    if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
-      try {
-        // Extension ID will need to be updated with your actual extension ID
-        const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
+    try {
+      // First check if the API is available
+      if (!isChromeExtensionApiAvailable()) {
+        setAllDisconnected();
+        return;
+      }
 
-        chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
-          if (response && response.installed) {
-            setExtensionStatus('connected');
+      // Check if extension is installed - use our suppression option to handle common errors
+      const isAvailable = await isExtensionAvailable();
 
-            // Now check TradingView and Poloniex connection status
-            chrome.runtime.sendMessage(
-              extensionId,
+      if (isAvailable) {
+        // The extension might be available but inactive (giving us connection errors)
+        if (
+          chrome.runtime.lastError &&
+          (chrome.runtime.lastError.message.includes('Could not establish connection') ||
+            chrome.runtime.lastError.message.includes('Receiving end does not exist'))
+        ) {
+          // Set to "connected" but with a special status for the sub-components
+          setExtensionStatus('connected');
+          setTradingViewStatus('disconnected');
+          setPoloniexStatus('disconnected');
+        } else {
+          // Extension responded properly
+          setExtensionStatus('connected');
+
+          // Check TradingView connection status - suppress connection errors
+          try {
+            const tvResponse = await safelySendExtensionMessage<{ connected: boolean }>(
               { type: 'CHECK_TRADINGVIEW_STATUS' },
-              response => {
-                setTradingViewStatus(response && response.connected ? 'connected' : 'disconnected');
-              }
+              3000,
+              true // Suppress connection errors
             );
 
-            chrome.runtime.sendMessage(extensionId, { type: 'CHECK_POLONIEX_STATUS' }, response => {
-              setPoloniexStatus(response && response.connected ? 'connected' : 'disconnected');
-              setIsRefreshing(false);
-            });
-          } else {
-            setExtensionStatus('disconnected');
+            if (tvResponse === null) {
+              // Connection error - extension exists but doesn't handle this message
+              setTradingViewStatus('disconnected');
+            } else {
+              setTradingViewStatus(tvResponse?.connected ? 'connected' : 'disconnected');
+            }
+          } catch (error) {
             setTradingViewStatus('disconnected');
-            setPoloniexStatus('disconnected');
-            setIsRefreshing(false);
           }
-        });
-      } catch (error) {
-        console.error('Error checking extension status:', error);
-        setExtensionStatus('disconnected');
-        setTradingViewStatus('disconnected');
-        setPoloniexStatus('disconnected');
-        setIsRefreshing(false);
+
+          // Check Poloniex connection status - suppress connection errors
+          try {
+            const poloResponse = await safelySendExtensionMessage<{ connected: boolean }>(
+              { type: 'CHECK_POLONIEX_STATUS' },
+              3000,
+              true // Suppress connection errors
+            );
+
+            if (poloResponse === null) {
+              // Connection error - extension exists but doesn't handle this message
+              setPoloniexStatus('disconnected');
+            } else {
+              setPoloniexStatus(poloResponse?.connected ? 'connected' : 'disconnected');
+            }
+          } catch (error) {
+            setPoloniexStatus('disconnected');
+          }
+        }
+      } else {
+        // Extension is definitely not available
+        setAllDisconnected();
       }
-    } else {
-      // Chrome extension API not available
-      setExtensionStatus('disconnected');
-      setTradingViewStatus('disconnected');
-      setPoloniexStatus('disconnected');
+    } catch (error) {
+      console.error('Error checking extension status:', error);
+      setAllDisconnected();
+    } finally {
       setIsRefreshing(false);
     }
+  };
+
+  // Helper to set all statuses to disconnected
+  const setAllDisconnected = () => {
+    setExtensionStatus('disconnected');
+    setTradingViewStatus('disconnected');
+    setPoloniexStatus('disconnected');
   };
 
   const handleRefresh = () => {

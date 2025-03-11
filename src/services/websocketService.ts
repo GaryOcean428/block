@@ -34,7 +34,7 @@ class WebSocketService {
   private useMockData: boolean = ENV.MOCK_MODE; // Use the environment variable
 
   // In a real application, this would be your WebSocket server URL
-  private readonly SOCKET_URL = 'http://localhost:3000';
+  private readonly SOCKET_URL = 'http://localhost:8765';
 
   private constructor() {}
 

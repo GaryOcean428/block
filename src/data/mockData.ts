@@ -1,5 +1,5 @@
-import type { MarketData, Strategy, Trade } from '../types';
-import { StrategyType } from '../types';
+import type { Trade, MarketData } from '../types';
+import { StrategyType, type Strategy } from '../types/strategy';
 
 export interface Transaction {
   id: string;

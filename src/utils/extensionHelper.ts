@@ -1,5 +1,154 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { ExtensionMessage } from '../types';
+
+/**
+ * Safely checks if the Chrome extension API is available
+ * @returns {boolean} True if Chrome extension API is available
+ */
+export const isChromeExtensionApiAvailable = (): boolean => {
+  try {
+    return !!(
+      typeof window !== 'undefined' &&
+      window.chrome &&
+      chrome.runtime &&
+      chrome.runtime.sendMessage
+    );
+  } catch (error) {
+    console.error('Error checking Chrome extension API availability:', error);
+    return false;
+  }
+};
+
+/**
+ * Extension ID for the trading platform extension
+ */
+export const EXTENSION_ID = 'mnmijjdadadomgmpopijhghadplbbjoc';
+
+/**
+ * Check if an error is a "Receiving end does not exist" error,
+ * which is expected when the extension is loaded but not listening
+ */
+export const isConnectionNotEstablishedError = (error: Error): boolean => {
+  return (
+    error.message.includes('Could not establish connection') ||
+    error.message.includes('Receiving end does not exist')
+  );
+};
+
+/**
+ * Safely sends a message to the Chrome extension with timeout handling
+ *
+ * @param message The message to send to the extension
+ * @param timeoutMs Timeout in milliseconds to wait for a response
+ * @param suppressConnectionErrors If true, will resolve with null for connection errors
+ * @returns Promise that resolves with the response or rejects with an error
+ */
+export const safelySendExtensionMessage = <T>(
+  message: ExtensionMessage,
+  timeoutMs = 3000,
+  suppressConnectionErrors = false
+): Promise<T | null> => {
+  return new Promise((resolve, reject) => {
+    if (!isChromeExtensionApiAvailable()) {
+      if (suppressConnectionErrors) {
+        resolve(null);
+      } else {
+        reject(new Error('Chrome extension API not available'));
+      }
+      return;
+    }
+
+    // Set a timeout to handle cases where the callback is never called
+    const timeoutId = setTimeout(() => {
+      if (suppressConnectionErrors) {
+        resolve(null);
+      } else {
+        reject(new Error('Extension communication timeout'));
+      }
+    }, timeoutMs);
+
+    try {
+      chrome.runtime.sendMessage(EXTENSION_ID, message, response => {
+        clearTimeout(timeoutId);
+
+        // Check for runtime errors
+        if (chrome.runtime.lastError) {
+          const error = new Error(`Extension error: ${chrome.runtime.lastError.message}`);
+
+          // If this is a connection error and we're suppressing them, resolve with null
+          if (suppressConnectionErrors && isConnectionNotEstablishedError(error)) {
+            resolve(null);
+          } else {
+            reject(error);
+          }
+          return;
+        }
+
+        resolve(response as T);
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      // If this is a connection error and we're suppressing them, resolve with null
+      if (
+        suppressConnectionErrors &&
+        error instanceof Error &&
+        isConnectionNotEstablishedError(error)
+      ) {
+        resolve(null);
+      } else {
+        reject(error);
+      }
+    }
+  });
+};
+
+/**
+ * Safely checks if the extension is installed
+ * This function will return true if:
+ * 1. The extension responds with installed:true, or
+ * 2. We get a "Receiving end does not exist" error, which means the extension exists
+ *    but isn't listening for our specific message yet
+ *
+ * @returns Promise resolving to a boolean indicating if the extension is available
+ */
+export const isExtensionAvailable = async (): Promise<boolean> => {
+  try {
+    // First try a normal check
+    const response = await safelySendExtensionMessage<{ installed: boolean }>(
+      { type: 'CHECK_INSTALLATION' },
+      3000,
+      true // Suppress connection errors
+    );
+
+    // If we get a response with installed: true, return true
+    if (response?.installed) {
+      return true;
+    }
+
+    // If we got null (which means we suppressed a connection error),
+    // check if chrome.runtime.lastError exists and is a connection error
+    if (response === null && chrome.runtime.lastError) {
+      const errorMessage = chrome.runtime.lastError.message;
+      if (
+        errorMessage.includes('Could not establish connection') ||
+        errorMessage.includes('Receiving end does not exist')
+      ) {
+        // This is actually a good sign - it means the extension exists but isn't
+        // handling our message. Consider it installed.
+        return true;
+      }
+    }
+
+    // Otherwise, we don't have a successful response and didn't get a connection error
+    return false;
+  } catch (error) {
+    // For any other errors, log them but consider the extension unavailable
+    console.error('Error checking extension availability:', error);
+    return false;
+  }
+};
 
 export const createExtensionZip = async (): Promise<void> => {
   try {

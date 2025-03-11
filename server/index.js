@@ -70,8 +70,11 @@ const connectToPoloniexWebSocket = () => {
         // Format the data for our clients
         const formattedData = formatPoloniexTickerData(message.data);
 
-        // Broadcast to all connected clients
-        io.emit('marketData', formattedData);
+        // Only broadcast valid data
+        if (formattedData) {
+          // Broadcast to all connected clients
+          io.emit('marketData', formattedData);
+        }
       }
     } catch (error) {
       console.error('Error processing WebSocket message:', error);
@@ -102,18 +105,29 @@ const connectToPoloniexWebSocket = () => {
 
 // Format Poloniex ticker data to match our app's data structure
 const formatPoloniexTickerData = data => {
-  // Convert Poloniex pair format (BTC_USDT) to our format (BTC-USDT)
-  const pair = data.symbol.replace('_', '-');
+  // Safety check for undefined or missing symbol
+  if (!data || !data.symbol) {
+    console.error('Invalid data received from Poloniex:', data);
+    return null;
+  }
 
-  return {
-    pair,
-    timestamp: Date.now(),
-    open: parseFloat(data.open),
-    high: parseFloat(data.high),
-    low: parseFloat(data.low),
-    close: parseFloat(data.close),
-    volume: parseFloat(data.quantity),
-  };
+  try {
+    // Convert Poloniex pair format (BTC_USDT) to our format (BTC-USDT)
+    const pair = data.symbol.replace('_', '-');
+
+    return {
+      pair,
+      timestamp: Date.now(),
+      open: parseFloat(data.open || 0),
+      high: parseFloat(data.high || 0),
+      low: parseFloat(data.low || 0),
+      close: parseFloat(data.close || 0),
+      volume: parseFloat(data.quantity || 0),
+    };
+  } catch (error) {
+    console.error('Error formatting Poloniex data:', error);
+    return null;
+  }
 };
 
 // Socket.IO connection handler

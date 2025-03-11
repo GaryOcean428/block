@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import TradingContext from '../context/TradingContext';
-import type { TradingContextType } from '../types/TradingContextType';
+import type { TradingContextType } from '../types';
 
 /**
  * Custom hook to use the Trading context

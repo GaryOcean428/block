@@ -1,4 +1,5 @@
-import type { MarketData, Trade, OrderResult, Strategy } from './index';
+import type { Trade, OrderResult, MarketData } from './index';
+import type { Strategy } from './strategy';
 
 export interface TradingContextType {
   marketData: MarketData[];

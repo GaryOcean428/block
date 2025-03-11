@@ -1,6 +1,7 @@
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { getStorageItem, STORAGE_KEYS } from '../utils/storage';
+import { logger } from '../utils/logger';
 
 // Base URLs for Poloniex APIs
 const FUTURES_BASE_URL = 'https://futures-api.poloniex.com/v3';
@@ -115,6 +116,12 @@ interface TradeData {
   pair: string;
 }
 
+export interface ApiPermissions {
+  read: boolean;
+  trade: boolean;
+  withdraw: boolean;
+}
+
 // Create a singleton API client
 class PoloniexApiClient {
   private static instance: PoloniexApiClient;
@@ -132,6 +139,8 @@ class PoloniexApiClient {
   private readonly orderUpdateCallbacks: Set<OrderUpdateCallback> = new Set();
   private readonly liquidationCallbacks: Set<LiquidationCallback> = new Set();
   private readonly marginCallbacks: Set<MarginCallback> = new Set();
+  private connectionStatus: 'connected' | 'disconnected' | 'error' = 'disconnected';
+  private apiPermissions: ApiPermissions = { read: false, trade: false, withdraw: false };
 
   private constructor() {
     this.loadCredentials();
@@ -230,6 +239,20 @@ class PoloniexApiClient {
             ? 'Using stored API credentials but running in mock mode'
             : 'Using stored API credentials with live trading enabled'
         );
+
+        // Verify credentials if not in mock mode
+        if (!this.mockMode) {
+          this.verifyApiCredentials().then(result => {
+            if (result.valid) {
+              this.connectionStatus = 'connected';
+              this.apiPermissions = result.permissions;
+              logger.info('API credentials verified successfully');
+            } else {
+              this.connectionStatus = 'error';
+              logger.error('API credentials verification failed');
+            }
+          });
+        }
       } else {
         // No stored credentials, use mock mode
         this.mockMode = true;
@@ -252,6 +275,14 @@ class PoloniexApiClient {
       this.mockMode = true;
       console.log('Error loading credentials, defaulting to mock mode');
     }
+  }
+
+  public getConnectionInfo(): { status: string; permissions: ApiPermissions; mockMode: boolean } {
+    return {
+      status: this.connectionStatus,
+      permissions: this.apiPermissions,
+      mockMode: this.mockMode,
+    };
   }
 
   /**
@@ -333,8 +364,10 @@ class PoloniexApiClient {
       });
 
       // Cache the response
+      // Cache the response
       this.cachedBalance = response.data;
       this.lastBalanceUpdate = Date.now();
+      this.connectionStatus = 'connected';
 
       console.log(`[Request ${requestId}] Account balance fetched successfully`);
       return this.cachedBalance;
@@ -385,6 +418,23 @@ class PoloniexApiClient {
       });
 
       console.log(`[Request ${requestId}] Market data fetched successfully for ${pair}`);
+
+      // Update the real-time price service with the latest data
+      if (response.data && response.data.length > 0) {
+        const latestCandle = response.data[response.data.length - 1];
+        // We'll handle this another way to avoid circular dependency
+        // realTimePriceService.subscribeToPrice(pair);
+
+        // Dispatch an event that realTimePriceService can listen to instead
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('market-data-updated', {
+              detail: { pair, data: latestCandle },
+            })
+          );
+        }
+      }
+
       return response.data;
     } catch (err) {
       console.error(
@@ -824,3 +874,36 @@ class PoloniexApiClient {
 
 // Export a singleton instance
 export const poloniexApi = PoloniexApiClient.getInstance();
+
+// Set up event listeners for handling price subscription and polling
+if (typeof window !== 'undefined') {
+  // Handle price subscription requests from realTimePriceService
+  window.addEventListener('price-subscription-request', ((event: CustomEvent) => {
+    const { pair } = event.detail;
+    if (pair) {
+      poloniexApi.getMarketData(pair).then(marketData => {
+        if (marketData && marketData.length > 0) {
+          const latestCandle = marketData[marketData.length - 1];
+          // Dispatch an event that realTimePriceService can listen to
+          window.dispatchEvent(
+            new CustomEvent('market-data-updated', {
+              detail: {
+                pair,
+                data: latestCandle,
+              },
+            })
+          );
+        }
+      });
+    }
+  }) as EventListener);
+
+  // Handle price polling requests from realTimePriceService
+  window.addEventListener('price-polling-request', ((event: CustomEvent) => {
+    const { pair } = event.detail;
+    if (pair) {
+      poloniexApi.getMarketData(pair);
+      // The getMarketData method already dispatches the market-data-updated event
+    }
+  }) as EventListener);
+}

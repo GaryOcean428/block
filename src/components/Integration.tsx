@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSettings } from '../context/SettingsContext';
+import { useSettings } from '../hooks/useSettings';
 import { useTradingContext } from '../hooks/useTradingContext';
 
 interface ExtensionMessageData {

@@ -1,6 +1,17 @@
-import React, { useState } from 'react';
-import { Copy, Plus, Trash2, AlertTriangle, Shield, RefreshCw } from 'lucide-react';
-import { useSettings } from '../../context/SettingsContext';
+import React, { useState, useEffect } from 'react';
+import {
+  Copy,
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Shield,
+  RefreshCw,
+  Check,
+  X,
+  Loader,
+} from 'lucide-react';
+import { useSettings } from '../../hooks/useSettings';
+import { poloniexApi } from '../../services/poloniexAPI';
 
 interface ApiKey {
   id: string;
@@ -17,7 +28,7 @@ interface ApiKey {
 }
 
 const ApiKeyManagement: React.FC = () => {
-  const { apiKey } = useSettings();
+  const { apiKey, apiSecret, updateSettings } = useSettings();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newKeyForm, setNewKeyForm] = useState({
     name: '',
@@ -28,6 +39,19 @@ const ApiKeyManagement: React.FC = () => {
     },
     expiration: 'never',
   });
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connected' | 'disconnected' | 'error' | 'checking'
+  >('disconnected');
+  const [apiPermissions, setApiPermissions] = useState<{
+    read: boolean;
+    trade: boolean;
+    withdraw: boolean;
+  }>({
+    read: false,
+    trade: false,
+    withdraw: false,
+  });
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Mock API keys
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([
@@ -45,6 +69,38 @@ const ApiKeyManagement: React.FC = () => {
       expiresAt: null,
     },
   ]);
+
+  // Check connection status on load
+  useEffect(() => {
+    if (apiKey && apiSecret) {
+      verifyApiConnection();
+    }
+  }, [apiKey, apiSecret]);
+
+  // Verify API connection
+  const verifyApiConnection = async () => {
+    if (!apiKey || !apiSecret) {
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    setIsVerifying(true);
+    setConnectionStatus('checking');
+
+    try {
+      const result = await poloniexApi.verifyApiCredentials();
+      if (result.valid) {
+        setConnectionStatus('connected');
+        setApiPermissions(result.permissions);
+      } else {
+        setConnectionStatus('error');
+      }
+    } catch (error) {
+      setConnectionStatus('error');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   // Handle form input changes
   const handlePermissionChange = (permission: 'read' | 'trade' | 'withdraw') => {
@@ -95,11 +151,65 @@ const ApiKeyManagement: React.FC = () => {
       },
       expiration: 'never',
     });
+
+    // Update settings with the new key
+    updateSettings({
+      apiKey: newKey.key,
+      apiSecret: Math.random().toString(36).substring(2, 30), // In a real app, this would be provided by the exchange
+    });
+
+    // Verify the new connection
+    setTimeout(() => {
+      verifyApiConnection();
+    }, 500);
   };
 
   // Delete API key
   const handleDeleteKey = (id: string) => {
     setApiKeys(apiKeys.filter(key => key.id !== id));
+
+    // If we're deleting the current key, clear the settings
+    if (apiKeys.find(key => key.id === id)?.key === apiKey) {
+      updateSettings({
+        apiKey: '',
+        apiSecret: '',
+      });
+      setConnectionStatus('disconnected');
+    }
+  };
+
+  // Get connection status badge
+  const getConnectionStatusBadge = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return (
+          <div className="flex items-center text-green-600">
+            <Check className="h-4 w-4 mr-1" />
+            <span>Connected</span>
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="flex items-center text-red-600">
+            <X className="h-4 w-4 mr-1" />
+            <span>Connection Error</span>
+          </div>
+        );
+      case 'checking':
+        return (
+          <div className="flex items-center text-blue-600">
+            <Loader className="h-4 w-4 mr-1 animate-spin" />
+            <span>Verifying...</span>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center text-gray-600">
+            <AlertTriangle className="h-4 w-4 mr-1" />
+            <span>Not Connected</span>
+          </div>
+        );
+    }
   };
 
   return (
@@ -114,6 +224,56 @@ const ApiKeyManagement: React.FC = () => {
               code. Keys with trade and withdraw permissions should be used with extreme caution.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Connection Status */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-medium">Connection Status</h3>
+            <div className="mt-2">{getConnectionStatusBadge()}</div>
+
+            {connectionStatus === 'connected' && (
+              <div className="mt-2 text-sm">
+                <div className="font-medium">Permissions:</div>
+                <div className="flex space-x-2 mt-1">
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${apiPermissions.read ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
+                  >
+                    Read {apiPermissions.read ? '✓' : '✗'}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${apiPermissions.trade ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                  >
+                    Trade {apiPermissions.trade ? '✓' : '✗'}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${apiPermissions.withdraw ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}
+                  >
+                    Withdraw {apiPermissions.withdraw ? '✓' : '✗'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={verifyApiConnection}
+            disabled={isVerifying || !apiKey || !apiSecret}
+            className={`flex items-center px-3 py-2 rounded-md ${
+              isVerifying || !apiKey || !apiSecret
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >
+            {isVerifying ? (
+              <Loader className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-1" />
+            )}
+            Verify Connection
+          </button>
         </div>
       </div>
 

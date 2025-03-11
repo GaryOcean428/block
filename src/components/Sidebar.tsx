@@ -1,11 +1,13 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTradingContext } from '../hooks/useTradingContext';
+import { useAuth } from '../hooks/useAuth';
+import { signOut } from '../services/auth';
 import {
   LayoutDashboard,
   LineChart,
   Settings,
-  MessageSquare,
+  LogOut,
   Zap,
   BarChart4,
   Chrome,
@@ -14,16 +16,24 @@ import {
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { accountBalance, isLoading } = useTradingContext();
+  const { user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/strategies', label: 'Trading Strategies', icon: <Zap size={20} /> },
-    { path: '/account', label: 'Account', icon: <User size={20} /> },
-    { path: '/charts', label: 'Market Analysis', icon: <BarChart4 size={20} /> },
-    { path: '/performance', label: 'Performance', icon: <LineChart size={20} /> },
-    { path: '/chat', label: 'Community Chat', icon: <MessageSquare size={20} /> },
-    { path: '/extension', label: 'Chrome Extension', icon: <Chrome size={20} /> },
+    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { path: '/strategies', label: 'Trading Strategies', icon: <LineChart size={20} /> },
+    { path: '/market-analysis', label: 'Market Analysis', icon: <BarChart4 size={20} /> },
+    { path: '/extension-download', label: 'Chrome Extension', icon: <Chrome size={20} /> },
     { path: '/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 
@@ -57,7 +67,8 @@ const Sidebar: React.FC = () => {
       </div>
 
       <div className="p-4 border-t border-gray-700 mt-auto">
-        <div className="bg-gray-900 p-3 rounded-md">
+        {/* Account balance info */}
+        <div className="bg-gray-900 p-3 rounded-md mb-4">
           <div className="text-sm text-gray-400 mb-2">Account Balance</div>
           {isLoading ? (
             <div className="text-sm text-gray-500">Loading...</div>
@@ -74,6 +85,26 @@ const Sidebar: React.FC = () => {
               </div>
             </>
           )}
+        </div>
+
+        {/* User info and logout */}
+        <div className="flex flex-col">
+          <div className="flex items-center mb-3">
+            <div className="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center mr-2">
+              {user?.email?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 truncate">
+              <div className="text-sm font-medium truncate">{user?.email || 'User'}</div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center p-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors duration-200"
+          >
+            <LogOut size={16} className="mr-2" />
+            Sign Out
+          </button>
         </div>
       </div>
     </aside>

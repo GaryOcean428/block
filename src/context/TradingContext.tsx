@@ -6,8 +6,10 @@ import React, {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { MarketData, Trade, Strategy, TradingContextType } from '../types';
-import { StrategyType } from '../types';
+import type { TradingContextType } from '../types';
+// Import types
+import type { Trade, MarketData } from '../types';
+import { StrategyType, type Strategy } from '../types/strategy';
 import { mockMarketData, mockTrades } from '../data/mockData';
 import { usePoloniexData } from '../hooks/usePoloniexData';
 import { poloniexApi } from '../services/poloniexAPI';

@@ -1,6 +1,11 @@
 import { Lock, Shield, TerminalSquare, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings } from '../../hooks/useSettings';
+import {
+  isChromeExtensionApiAvailable,
+  safelySendExtensionMessage,
+  isExtensionAvailable,
+} from '../../utils/extensionHelper';
 
 interface ExtensionSettingsProps {
   onClose?: () => void;
@@ -20,26 +25,43 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
     apiSecret: apiSecret,
   });
 
-  // Check if the extension is installed
+  // Check if the extension is installed using our safer function
   useEffect(() => {
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+    const checkExtension = async () => {
       try {
-        // Extension ID will need to be updated with your actual extension ID
-        const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-
-        chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLATION' }, response => {
-          if (response?.installed) {
-            setExtensionStatus('Connected');
+        const available = await isExtensionAvailable();
+        if (available) {
+          // Even if the extension is installed, we might just be getting the
+          // "Receiving end does not exist" error, which means the extension exists
+          // but isn't handling our message. We'll show a special status for this.
+          if (
+            chrome.runtime.lastError &&
+            (chrome.runtime.lastError.message.includes('Could not establish connection') ||
+              chrome.runtime.lastError.message.includes('Receiving end does not exist'))
+          ) {
+            setExtensionStatus('Installed (Inactive)');
           } else {
-            setExtensionStatus('Not detected');
+            setExtensionStatus('Connected');
           }
-        });
-      } catch {
-        // In case of error, extension is not detected
+        } else {
+          setExtensionStatus('Not detected');
+        }
+      } catch (error) {
         setExtensionStatus('Not detected');
       }
-    }
+    };
+
+    checkExtension();
   }, []);
+
+  // Update form when API credentials change
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      apiKey,
+      apiSecret,
+    }));
+  }, [apiKey, apiSecret]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -57,30 +79,22 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Save API credentials
     if (formData.apiKey !== apiKey || formData.apiSecret !== apiSecret) {
-      updateSettings({
+      await updateSettings({
         apiKey: formData.apiKey,
         apiSecret: formData.apiSecret,
       });
     }
 
-    // If we have a chrome extension API and it's installed
-    if (
-      typeof chrome !== 'undefined' &&
-      chrome.runtime?.sendMessage &&
-      extensionStatus === 'Connected'
-    ) {
-      // Extension ID will need to be updated with your actual extension ID
-      const extensionId = 'jcdmopolmojdhpclfbemdpcdneobmnje';
-
-      // Update extension settings
-      chrome.runtime.sendMessage(
-        extensionId,
-        {
+    // Use our safer extension communication if extension is connected
+    if (extensionStatus === 'Connected' && isChromeExtensionApiAvailable()) {
+      try {
+        // Update extension settings
+        await safelySendExtensionMessage({
           type: 'UPDATE_SETTINGS',
           data: {
             extensionEnabled: formData.extensionEnabled,
@@ -90,26 +104,19 @@ const ExtensionSettings: React.FC<ExtensionSettingsProps> = ({ onClose }) => {
             notificationsEnabled: formData.notificationsEnabled,
             riskLimit: formData.riskLimit,
           },
-        },
-        response => {
-          console.log('Extension settings updated:', response);
-        }
-      );
+        });
 
-      // Update extension API credentials
-      chrome.runtime.sendMessage(
-        extensionId,
-        {
+        // Update extension API credentials
+        await safelySendExtensionMessage({
           type: 'UPDATE_CREDENTIALS',
           data: {
             apiKey: formData.apiKey,
             apiSecret: formData.apiSecret,
           },
-        },
-        response => {
-          console.log('Extension API credentials updated:', response);
-        }
-      );
+        });
+      } catch (error) {
+        // Error already logged in safelySendExtensionMessage
+      }
     }
 
     // Close the settings panel if a handler was provided

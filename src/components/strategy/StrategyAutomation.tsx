@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Strategy } from '../../types';
+import { type Strategy } from '../../types/strategy';
 import { automatedTrading } from '../../services/automatedTrading';
 import { Play, Pause, Settings, AlertTriangle } from 'lucide-react';
 

@@ -1,54 +1,17 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { getStorageItem, setStorageItem, STORAGE_KEYS, isStorageAvailable } from '../utils/storage';
 import { supabase } from '../services/supabase';
 import { getCurrentUser } from '../services/auth';
 import { getUserApiKeys, saveUserApiKeys, deleteUserApiKeys } from '../services/supabase';
+import {
+  SettingsContext,
+  type SettingsState,
+  defaultSettings,
+  SESSION_KEYS,
+} from './SettingsContextDefinitions';
 
-interface SettingsContextType {
-  apiKey: string;
-  apiSecret: string;
-  isLiveTrading: boolean;
-  darkMode: boolean;
-  defaultPair: string;
-  emailNotifications: boolean;
-  tradeNotifications: boolean;
-  priceAlerts: boolean;
-  chatNotifications: boolean;
-  showExtension: boolean;
-  updateSettings: (settings: Partial<SettingsState>) => void;
-  resetSettings: () => void;
-  hasStoredCredentials: boolean;
-  isAuthenticated: boolean;
-  userId: string | null;
-}
-
-interface SettingsState {
-  apiKey: string;
-  apiSecret: string;
-  isLiveTrading: boolean;
-  darkMode: boolean;
-  defaultPair: string;
-  emailNotifications: boolean;
-  tradeNotifications: boolean;
-  priceAlerts: boolean;
-  chatNotifications: boolean;
-  showExtension: boolean;
-}
-
-const defaultSettings: SettingsState = {
-  apiKey: '',
-  apiSecret: '',
-  isLiveTrading: false,
-  darkMode: false,
-  defaultPair: 'BTC-USDT',
-  emailNotifications: true,
-  tradeNotifications: true,
-  priceAlerts: false,
-  chatNotifications: true,
-  showExtension: true,
-};
-
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+// No exports here - only use the index.ts for exports
 
 interface SettingsProviderProps {
   children: ReactNode;
@@ -72,10 +35,21 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       };
     }
 
+    // Try to get API keys from sessionStorage for temporary persistence
+    let tempApiKey = '';
+    let tempApiSecret = '';
+
+    try {
+      tempApiKey = sessionStorage.getItem(SESSION_KEYS.API_KEY) ?? '';
+      tempApiSecret = sessionStorage.getItem(SESSION_KEYS.API_SECRET) ?? '';
+    } catch (e) {
+      console.warn('Failed to access sessionStorage:', e);
+    }
+
     return {
       // Non-sensitive settings stored in localStorage is fine
-      apiKey: '',
-      apiSecret: '',
+      apiKey: tempApiKey,
+      apiSecret: tempApiSecret,
       isLiveTrading: getStorageItem(STORAGE_KEYS.IS_LIVE_TRADING, false),
       darkMode: getStorageItem(STORAGE_KEYS.DARK_MODE, false),
       defaultPair: getStorageItem(STORAGE_KEYS.DEFAULT_PAIR, 'BTC-USDT'),
@@ -103,10 +77,19 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         if (apiKeys) {
           setSettings(prev => ({
             ...prev,
-            apiKey: apiKeys.api_key || '',
-            apiSecret: apiKeys.api_secret || '',
+            apiKey: apiKeys.api_key ?? '',
+            apiSecret: apiKeys.api_secret ?? '',
           }));
           setHasStoredCredentials(Boolean(apiKeys.api_key && apiKeys.api_secret));
+
+          // Store in session storage for persistence during navigation
+          try {
+            if (apiKeys.api_key) sessionStorage.setItem(SESSION_KEYS.API_KEY, apiKeys.api_key);
+            if (apiKeys.api_secret)
+              sessionStorage.setItem(SESSION_KEYS.API_SECRET, apiKeys.api_secret);
+          } catch (e) {
+            console.warn('Failed to store API keys in session storage:', e);
+          }
         }
       }
     };
@@ -126,10 +109,19 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         if (apiKeys) {
           setSettings(prev => ({
             ...prev,
-            apiKey: apiKeys.api_key || '',
-            apiSecret: apiKeys.api_secret || '',
+            apiKey: apiKeys.api_key ?? '',
+            apiSecret: apiKeys.api_secret ?? '',
           }));
           setHasStoredCredentials(Boolean(apiKeys.api_key && apiKeys.api_secret));
+
+          // Store in session storage for persistence during navigation
+          try {
+            if (apiKeys.api_key) sessionStorage.setItem(SESSION_KEYS.API_KEY, apiKeys.api_key);
+            if (apiKeys.api_secret)
+              sessionStorage.setItem(SESSION_KEYS.API_SECRET, apiKeys.api_secret);
+          } catch (e) {
+            console.warn('Failed to store API keys in session storage:', e);
+          }
         }
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
@@ -142,6 +134,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
           apiSecret: '',
         }));
         setHasStoredCredentials(false);
+
+        // Clear from session storage
+        try {
+          sessionStorage.removeItem(SESSION_KEYS.API_KEY);
+          sessionStorage.removeItem(SESSION_KEYS.API_SECRET);
+        } catch (e) {
+          console.warn('Failed to clear API keys from session storage:', e);
+        }
       }
     });
 
@@ -156,53 +156,88 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, [settings.apiKey, settings.apiSecret]);
 
   // Update settings in state and persistence
-  const updateSettings = async (newSettings: Partial<SettingsState>) => {
-    // Special handling for API keys - store them in Supabase if authenticated
-    if ((newSettings.apiKey !== undefined || newSettings.apiSecret !== undefined) && userId) {
-      const updatedApiKey = newSettings.apiKey !== undefined ? newSettings.apiKey : settings.apiKey;
-      const updatedApiSecret =
-        newSettings.apiSecret !== undefined ? newSettings.apiSecret : settings.apiSecret;
+  const updateSettings = useCallback(
+    async (newSettings: Partial<SettingsState>): Promise<boolean> => {
+      try {
+        // Update keys in session storage immediately to prevent loss during navigation
+        if (
+          canUseStorage &&
+          (newSettings.apiKey !== undefined || newSettings.apiSecret !== undefined)
+        ) {
+          try {
+            const updatedApiKey = newSettings.apiKey ?? settings.apiKey;
+            const updatedApiSecret = newSettings.apiSecret ?? settings.apiSecret;
 
-      await saveUserApiKeys(userId, updatedApiKey, updatedApiSecret);
-    }
-
-    setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-
-      // Special handling for live trading mode
-      if (newSettings.isLiveTrading !== undefined) {
-        // Only allow live trading if we have API credentials
-        if (newSettings.isLiveTrading && (!updated.apiKey || !updated.apiSecret)) {
-          console.log('Cannot enable live trading without API credentials');
-          updated.isLiveTrading = false;
+            if (updatedApiKey) sessionStorage.setItem(SESSION_KEYS.API_KEY, updatedApiKey);
+            if (updatedApiSecret) sessionStorage.setItem(SESSION_KEYS.API_SECRET, updatedApiSecret);
+          } catch (e) {
+            console.warn('Failed to update API keys in session storage:', e);
+          }
         }
-      }
 
-      // Only persist non-sensitive settings to localStorage if it's available
-      if (canUseStorage) {
-        // We don't store API keys in localStorage
-        const safeSettings = { ...newSettings };
-        delete safeSettings.apiKey;
-        delete safeSettings.apiSecret;
+        // Special handling for API keys - store them in Supabase if authenticated
+        if ((newSettings.apiKey !== undefined || newSettings.apiSecret !== undefined) && userId) {
+          const updatedApiKey = newSettings.apiKey ?? settings.apiKey;
+          const updatedApiSecret = newSettings.apiSecret ?? settings.apiSecret;
 
-        // Persist each updated setting to localStorage
-        Object.entries(safeSettings).forEach(([key, value]) => {
-          const storageKey = STORAGE_KEYS[key.toUpperCase()] || `poloniex_${key}`;
-          setStorageItem(storageKey, value);
+          await saveUserApiKeys(userId, updatedApiKey, updatedApiSecret);
+        }
+
+        setSettings(prev => {
+          const updated = { ...prev, ...newSettings };
+
+          // Special handling for live trading mode
+          if (newSettings.isLiveTrading !== undefined) {
+            // Only allow live trading if we have API credentials
+            if (newSettings.isLiveTrading && (!updated.apiKey || !updated.apiSecret)) {
+              console.log('Cannot enable live trading without API credentials');
+              updated.isLiveTrading = false;
+            }
+          }
+
+          // Only persist non-sensitive settings to localStorage if it's available
+          if (canUseStorage) {
+            // We don't store API keys in localStorage
+            const safeSettings = { ...newSettings };
+            delete safeSettings.apiKey;
+            delete safeSettings.apiSecret;
+
+            // Persist each updated setting to localStorage
+            Object.entries(safeSettings).forEach(([key, value]) => {
+              // Use type assertion to safely access STORAGE_KEYS
+              const storageKey =
+                (STORAGE_KEYS as Record<string, string>)[key.toUpperCase()] ?? `poloniex_${key}`;
+              setStorageItem(storageKey, value);
+            });
+          }
+
+          return updated;
         });
-      }
 
-      return updated;
-    });
-  };
+        return true;
+      } catch (error) {
+        console.error('Failed to update settings:', error);
+        return false;
+      }
+    },
+    [canUseStorage, settings.apiKey, settings.apiSecret, userId]
+  );
 
   // Reset all settings to default
-  const resetSettings = async () => {
+  const resetSettings = useCallback(() => {
     setSettings(defaultSettings);
 
     // Delete API keys from Supabase if authenticated
     if (userId) {
-      await deleteUserApiKeys(userId);
+      void deleteUserApiKeys(userId);
+    }
+
+    // Clear from session storage
+    try {
+      sessionStorage.removeItem(SESSION_KEYS.API_KEY);
+      sessionStorage.removeItem(SESSION_KEYS.API_SECRET);
+    } catch (e) {
+      console.warn('Failed to clear API keys from session storage:', e);
     }
 
     if (canUseStorage) {
@@ -210,28 +245,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         localStorage.removeItem(key);
       });
     }
-  };
+  }, [canUseStorage, userId]);
 
-  return (
-    <SettingsContext.Provider
-      value={{
-        ...settings,
-        updateSettings,
-        resetSettings,
-        hasStoredCredentials,
-        isAuthenticated,
-        userId,
-      }}
-    >
-      {children}
-    </SettingsContext.Provider>
+  // Use useMemo to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      ...settings,
+      updateSettings,
+      resetSettings,
+      hasStoredCredentials,
+      isAuthenticated,
+      userId,
+    }),
+    [settings, hasStoredCredentials, isAuthenticated, userId, updateSettings, resetSettings]
   );
-};
 
-export const useSettings = () => {
-  const context = useContext(SettingsContext);
-  if (context === undefined) {
-    throw new Error('useSettings must be used within a SettingsProvider');
-  }
-  return context;
+  return <SettingsContext.Provider value={contextValue}>{children}</SettingsContext.Provider>;
 };
