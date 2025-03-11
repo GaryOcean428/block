@@ -5,10 +5,19 @@
 - Install: `yarn`
 - Dev server: `yarn dev`
 - Build: `yarn build`
-- Lint: `yarn lint` or `yarn format`
+- Lint: `yarn lint` or `yarn lint:fix` (auto-fix)
+- Format: `yarn format`
+- Check types: `yarn check-types`
 - Test: `yarn test` (all tests) or `yarn test:watch` (watch mode)
 - Single test: `yarn test -- path/to/test.test.tsx`
 - Server: `yarn server`
+
+## Helper Scripts
+
+- `./scripts/fix-common-issues.sh` - Automatically fix common linting issues
+- `./scripts/improve-types.sh` - Analyze the codebase for type issues
+- `yarn fix:unused-vars` - Fix issues with unused variables
+- `yarn fix:deps` - Fix React dependency array issues
 
 ## TypeScript & Formatting
 
